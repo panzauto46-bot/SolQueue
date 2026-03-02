@@ -190,6 +190,9 @@ SolQueue/
 ├── 📄 README.md                    # This file
 ├── 📄 LICENSE                      # MIT License
 ├── 📄 ROADMAP.md                   # Detailed development roadmap
+├── 📁 scripts/                     # Utility scripts (tooling + deploy helpers)
+│   ├── install-tools.sh            # WSL/Linux toolchain setup helper
+│   └── deploy-devnet.ps1           # Windows helper for devnet deploy checks
 │
 ├── 🌐 Frontend (Web Dashboard)
 │   ├── index.html                  # Entry HTML with meta tags & fonts
@@ -286,6 +289,11 @@ anchor build
 solana config set --url devnet
 solana airdrop 2
 anchor deploy
+```
+
+Windows helper (recommended in this repo):
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/deploy-devnet.ps1
 ```
 
 ### 5. Run Tests
