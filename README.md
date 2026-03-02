@@ -339,6 +339,7 @@ anchor test
 - [x] Pipeline flow visualization
 - [x] Feature showcase & Web2 vs Solana comparison
 - [x] Architecture diagram section
+- [x] Capsule-style top navigation with centered menu links
 - [x] Dashboard — Overview with stats & activity feed
 - [x] Dashboard — Queue management interface
 - [x] Dashboard — Job monitor with conveyor belt animation

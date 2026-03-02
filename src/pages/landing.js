@@ -9,11 +9,13 @@ export function renderLandingPage() {
           <div class="logo-icon">◈</div>
           <div class="logo-text"><span>Sol</span>Queue</div>
         </a>
-        <div class="nav-links">
-          <a href="#features">Features</a>
-          <a href="#how-it-works">How it Works</a>
-          <a href="#architecture">Architecture</a>
-          <a href="#comparison">Web2 vs Solana</a>
+        <div class="nav-links-group">
+          <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it Works</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#comparison">Web2 vs Solana</a>
+          </div>
         </div>
         <div class="nav-actions">
           <a href="https://github.com" target="_blank" class="btn btn-ghost btn-sm">
