@@ -363,13 +363,14 @@ anchor test
 - [x] Integration test suite written (TypeScript/Mocha)
 - [ ] Deploy to Devnet (awaiting SOL airdrop)
 
-### Phase 3: Integration & Client 🔌
-- [ ] TypeScript SDK for program interaction
-- [ ] Connect frontend to on-chain data
-- [ ] Phantom wallet integration
-- [ ] Real-time updates via WebSocket subscription
-- [ ] CLI tool for queue management
-- [ ] Transaction links in dashboard
+### Phase 3: Integration & Client ✅
+- [x] TypeScript SDK (`src/sdk/index.js`) — SolQueueClient with 9 instruction methods
+- [x] Connect frontend to on-chain data — Data service with mock/live toggle
+- [x] Phantom wallet integration — Connect/disconnect with balance display
+- [x] Real-time updates via WebSocket subscription — Account change listeners
+- [x] CLI tool for queue management (`cli/index.js`) — 9 commands with colored output
+- [x] Transaction links in dashboard — Solscan explorer integration
+- [x] Toast notification system for transaction feedback
 
 ### Phase 4: Documentation & Polish 📚
 - [ ] Comprehensive architecture document
