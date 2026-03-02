@@ -224,6 +224,10 @@ export async function connectWallet(walletId) {
         notifyListeners();
         updateWalletUI();
         closeWalletPicker();
+
+        // Directly update dashboard wallet UI elements
+        updateDashboardWalletUI(walletState);
+
         showToast(`${walletConfig.name} connected!`, 'success');
 
         return client;
@@ -273,6 +277,7 @@ export async function disconnectWallet() {
 
     notifyListeners();
     updateWalletUI();
+    updateDashboardWalletUI(walletState);
 }
 
 /**
@@ -289,6 +294,63 @@ export async function refreshBalance() {
         updateWalletUI();
     } catch (e) {
         console.error('Balance refresh failed:', e);
+    }
+}
+
+/**
+ * Update dashboard-specific wallet UI (sidebar + header)
+ * This runs without page re-render
+ */
+export function updateDashboardWalletUI(state) {
+    const addr = state.publicKey;
+    const short = addr ? `${addr.slice(0, 4)}...${addr.slice(-4)}` : '';
+    const icon = state.walletIcon || '🔗';
+    const name = state.walletName || 'Wallet';
+
+    // Update sidebar wallet area
+    const sidebarWallet = document.getElementById('sidebar-wallet-area');
+    if (sidebarWallet) {
+        if (state.connected) {
+            sidebarWallet.innerHTML = `
+                <div class="wallet-avatar" style="color:#14F195;">◉</div>
+                <div class="wallet-info">
+                    <div class="wallet-label" style="color:#14F195;">${name}</div>
+                    <div class="wallet-address">${short}</div>
+                </div>
+                <div class="wallet-status" style="background:#14F195;"></div>
+            `;
+        } else {
+            sidebarWallet.innerHTML = `
+                <div class="wallet-avatar">◎</div>
+                <div class="wallet-info">
+                    <div class="wallet-label">Not Connected</div>
+                    <div class="wallet-address" style="color:var(--text-tertiary);">Click to connect</div>
+                </div>
+                <div class="wallet-status" style="background:var(--text-muted);"></div>
+            `;
+        }
+    }
+
+    // Update header wallet button
+    const headerBtn = document.getElementById('header-wallet-btn');
+    if (headerBtn) {
+        if (state.connected) {
+            headerBtn.innerHTML = `
+                <span class="wallet-icon">${icon}</span>
+                <span>${short}</span>
+            `;
+            headerBtn.title = `${name}: ${addr}`;
+            headerBtn.style.background = 'rgba(20, 241, 149, 0.15)';
+            headerBtn.style.border = '1px solid rgba(20, 241, 149, 0.3)';
+        } else {
+            headerBtn.innerHTML = `
+                <span class="wallet-icon">🔗</span>
+                <span>Connect</span>
+            `;
+            headerBtn.title = 'Connect Wallet';
+            headerBtn.style.background = '';
+            headerBtn.style.border = '';
+        }
     }
 }
 
