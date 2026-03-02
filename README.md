@@ -248,6 +248,9 @@ SolQueue/
         ├── ARCHITECTURE.md         # Deep-dive architecture document
         ├── WEB2_VS_SOLANA.md       # Detailed comparison analysis
         └── API.md                  # Program instruction reference
+        |-- SDK_GUIDE.md            # SDK integration and usage guide
+        |-- CLI_REFERENCE.md        # CLI command reference
+        `-- DEPLOY_GUIDE.md         # Devnet deployment troubleshooting
 ```
 
 ---
@@ -373,9 +376,9 @@ anchor test
 - [x] Toast notification system for transaction feedback
 
 ### Phase 4: Documentation & Polish 📚
-- [ ] Comprehensive architecture document
-- [ ] Web2 vs Solana deep-dive analysis
-- [ ] API reference documentation
+- [x] Comprehensive architecture document
+- [x] Web2 vs Solana deep-dive analysis
+- [x] API reference documentation
 - [ ] Demo video walkthrough
 - [ ] Performance benchmarks
 - [ ] Final README polish
