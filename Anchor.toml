@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [programs.devnet]
-solqueue = "11111111111111111111111111111111"
+solqueue = "GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64"
 
 [registry]
 url = "https://api.apr.dev"
