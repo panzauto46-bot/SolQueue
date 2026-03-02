@@ -25,10 +25,11 @@ Thumbs.db
 .env.local
 .env.*.local
 
-# Solana
+# Solana / Rust
 target/
 test-ledger/
 .anchor/
+Cargo.lock
 
 # Logs
 npm-debug.log*
