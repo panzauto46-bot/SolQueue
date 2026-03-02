@@ -6,6 +6,7 @@
 import './styles/global.css';
 import './styles/landing.css';
 import './styles/dashboard.css';
+import './styles/wallet.css';
 
 import { ThreeBackground } from './animations/three-bg.js';
 import { renderLandingPage, initLandingPage } from './pages/landing.js';
@@ -44,11 +45,23 @@ function handleRoute() {
 }
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initThreeBackground();
   handleRoute();
 
   window.addEventListener('hashchange', handleRoute);
+
+  // Initialize data service
+  try {
+    const { initDataService } = await import('./utils/data-service.js');
+    initDataService();
+  } catch (e) { console.warn('Data service init:', e); }
+
+  // Try auto-connect wallet
+  try {
+    const { tryAutoConnect } = await import('./utils/wallet-adapter.js');
+    await tryAutoConnect();
+  } catch (e) { /* No wallet available */ }
 });
 
 // Smooth page transitions

@@ -1,12 +1,14 @@
 import { MOCK_STATS, MOCK_QUEUES, MOCK_JOBS, MOCK_WORKERS, MOCK_ACTIVITIES, MOCK_CHART_DATA } from '../utils/mock-data.js';
 import { PipelineAnimation, BarChartAnimation, LineChartAnimation } from '../animations/pipeline.js';
+import { getWalletState, connectWallet, disconnectWallet, showToast, sendWithFeedback, onWalletChange } from '../utils/wallet-adapter.js';
+import { getData, getDataMode, setDataMode, onDataUpdate, initDataService } from '../utils/data-service.js';
 
 let pipelineAnim = null;
 let barChartAnim = null;
 let lineChartAnim = null;
 
 export function renderDashboard(activePage = 'overview') {
-    return `
+  return `
     <div class="app-layout">
       ${renderSidebar(activePage)}
       <div class="main-content">
@@ -21,21 +23,21 @@ export function renderDashboard(activePage = 'overview') {
 }
 
 function renderSidebar(activePage) {
-    const navItems = [
-        { id: 'overview', icon: '📊', label: 'Dashboard', badge: null },
-        { id: 'queues', icon: '📋', label: 'Queues', badge: MOCK_QUEUES.length },
-        { id: 'jobs', icon: '📄', label: 'Jobs', badge: MOCK_STATS.pendingJobs },
-        { id: 'workers', icon: '👷', label: 'Workers', badge: MOCK_STATS.onlineWorkers },
-        { id: 'analytics', icon: '📈', label: 'Analytics', badge: null },
-    ];
+  const navItems = [
+    { id: 'overview', icon: '📊', label: 'Dashboard', badge: null },
+    { id: 'queues', icon: '📋', label: 'Queues', badge: MOCK_QUEUES.length },
+    { id: 'jobs', icon: '📄', label: 'Jobs', badge: MOCK_STATS.pendingJobs },
+    { id: 'workers', icon: '👷', label: 'Workers', badge: MOCK_STATS.onlineWorkers },
+    { id: 'analytics', icon: '📈', label: 'Analytics', badge: null },
+  ];
 
-    const toolItems = [
-        { id: 'create-queue', icon: '➕', label: 'Create Queue', badge: null },
-        { id: 'submit-job', icon: '📨', label: 'Submit Job', badge: null },
-        { id: 'settings', icon: '⚙️', label: 'Settings', badge: null },
-    ];
+  const toolItems = [
+    { id: 'create-queue', icon: '➕', label: 'Create Queue', badge: null },
+    { id: 'submit-job', icon: '📨', label: 'Submit Job', badge: null },
+    { id: 'settings', icon: '⚙️', label: 'Settings', badge: null },
+  ];
 
-    return `
+  return `
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <a href="#/" class="sidebar-logo">
@@ -65,13 +67,29 @@ function renderSidebar(activePage) {
         </div>
       </nav>
       <div class="sidebar-footer">
-        <div class="sidebar-wallet" id="connect-wallet-btn">
-          <div class="wallet-avatar">◎</div>
-          <div class="wallet-info">
-            <div class="wallet-label">Connected</div>
-            <div class="wallet-address">7xKX...9mPw</div>
-          </div>
-          <div class="wallet-status"></div>
+        <div class="sidebar-wallet" id="sidebar-wallet-area">
+          ${(() => {
+      const ws = getWalletState();
+      if (ws.connected) {
+        const addr = ws.publicKey;
+        return `
+                <div class="wallet-avatar" style="color:#14F195;">◉</div>
+                <div class="wallet-info">
+                  <div class="wallet-label" style="color:#14F195;">Connected</div>
+                  <div class="wallet-address">${addr.slice(0, 4)}...${addr.slice(-4)}</div>
+                </div>
+                <div class="wallet-status" style="background:#14F195;"></div>
+              `;
+      }
+      return `
+              <div class="wallet-avatar">◎</div>
+              <div class="wallet-info">
+                <div class="wallet-label">Not Connected</div>
+                <div class="wallet-address" style="color:var(--text-tertiary);">Click to connect</div>
+              </div>
+              <div class="wallet-status" style="background:var(--text-muted);"></div>
+            `;
+    })()}
         </div>
       </div>
     </aside>
@@ -79,18 +97,18 @@ function renderSidebar(activePage) {
 }
 
 function renderTopHeader(activePage) {
-    const titles = {
-        overview: 'Dashboard',
-        queues: 'Queue Management',
-        jobs: 'Job Monitor',
-        workers: 'Worker Registry',
-        analytics: 'Analytics',
-        'create-queue': 'Create Queue',
-        'submit-job': 'Submit Job',
-        settings: 'Settings',
-    };
+  const titles = {
+    overview: 'Dashboard',
+    queues: 'Queue Management',
+    jobs: 'Job Monitor',
+    workers: 'Worker Registry',
+    analytics: 'Analytics',
+    'create-queue': 'Create Queue',
+    'submit-job': 'Submit Job',
+    settings: 'Settings',
+  };
 
-    return `
+  return `
     <header class="top-header">
       <div class="header-left">
         <button class="mobile-menu-btn btn-icon" id="mobile-menu-toggle">☰</button>
@@ -106,10 +124,14 @@ function renderTopHeader(activePage) {
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Search jobs, queues..." id="global-search">
         </div>
-        <div class="network-badge">
-          <span class="net-dot"></span>
+        <div class="network-badge devnet">
+          <span class="network-dot"></span>
           Devnet
         </div>
+        <button class="wallet-btn" id="header-wallet-btn" title="${getWalletState().connected ? 'Wallet Connected' : 'Connect Wallet'}">
+          <span class="wallet-icon">👻</span>
+          <span>${getWalletState().connected ? getWalletState().publicKey.slice(0, 4) + '...' + getWalletState().publicKey.slice(-4) : 'Connect'}</span>
+        </button>
         <button class="btn btn-icon btn-ghost notification-btn" id="notifications-btn">
           🔔
           <span class="notif-dot"></span>
@@ -120,21 +142,21 @@ function renderTopHeader(activePage) {
 }
 
 function renderPageContent(page) {
-    switch (page) {
-        case 'overview': return renderOverview();
-        case 'queues': return renderQueues();
-        case 'jobs': return renderJobs();
-        case 'workers': return renderWorkers();
-        case 'analytics': return renderAnalytics();
-        case 'create-queue': return renderCreateQueue();
-        case 'submit-job': return renderSubmitJob();
-        case 'settings': return renderSettings();
-        default: return renderOverview();
-    }
+  switch (page) {
+    case 'overview': return renderOverview();
+    case 'queues': return renderQueues();
+    case 'jobs': return renderJobs();
+    case 'workers': return renderWorkers();
+    case 'analytics': return renderAnalytics();
+    case 'create-queue': return renderCreateQueue();
+    case 'submit-job': return renderSubmitJob();
+    case 'settings': return renderSettings();
+    default: return renderOverview();
+  }
 }
 
 function renderOverview() {
-    return `
+  return `
     <!-- Stats -->
     <div class="stats-grid">
       <div class="glass-card stat-card purple" data-animate="fadeInUp">
@@ -231,7 +253,7 @@ function renderOverview() {
 }
 
 function renderQueues() {
-    return `
+  return `
     <div class="jobs-header" style="margin-bottom: var(--space-lg);">
       <div class="flex items-center gap-md">
         <h3 class="heading-sm">All Queues</h3>
@@ -278,7 +300,7 @@ function renderQueues() {
 }
 
 function renderJobs() {
-    return `
+  return `
     <div class="jobs-header">
       <div class="flex items-center gap-md">
         <h3 class="heading-sm">All Jobs</h3>
@@ -339,7 +361,7 @@ function renderJobs() {
 }
 
 function renderWorkers() {
-    return `
+  return `
     <div class="jobs-header" style="margin-bottom: var(--space-lg);">
       <div class="flex items-center gap-md">
         <h3 class="heading-sm">Worker Registry</h3>
@@ -356,9 +378,9 @@ function renderWorkers() {
               <div class="worker-name">${worker.name}</div>
               <div class="worker-status flex items-center gap-xs">
                 ${worker.status === 'online'
-            ? '<span style="color: var(--sol-green);">● Online</span>'
-            : '<span style="color: var(--color-error);">● Offline</span>'
-        }
+      ? '<span style="color: var(--sol-green);">● Online</span>'
+      : '<span style="color: var(--color-error);">● Offline</span>'
+    }
                 <span>· ${worker.lastHeartbeat}</span>
               </div>
             </div>
@@ -394,7 +416,7 @@ function renderWorkers() {
 }
 
 function renderAnalytics() {
-    return `
+  return `
     <div class="charts-grid">
       <!-- Throughput Chart -->
       <div class="glass-card-static chart-card">
@@ -507,7 +529,7 @@ function renderAnalytics() {
 }
 
 function renderCreateQueue() {
-    return `
+  return `
     <div class="glass-card-static" style="padding: var(--space-xl); max-width: 700px;">
       <h3 class="heading-sm" style="margin-bottom: var(--space-xl);">Create New Queue</h3>
       <div class="create-form">
@@ -564,7 +586,7 @@ function renderCreateQueue() {
 }
 
 function renderSubmitJob() {
-    return `
+  return `
     <div class="glass-card-static" style="padding: var(--space-xl); max-width: 700px;">
       <h3 class="heading-sm" style="margin-bottom: var(--space-xl);">Submit New Job</h3>
       <div class="create-form">
@@ -604,30 +626,49 @@ function renderSubmitJob() {
 }
 
 function renderSettings() {
-    return `
+  const ws = getWalletState();
+  const mode = getDataMode();
+  return `
     <div class="glass-card-static" style="padding: var(--space-xl); max-width: 700px;">
       <h3 class="heading-sm" style="margin-bottom: var(--space-xl);">Settings</h3>
       <div class="create-form">
         <div class="form-group">
           <label>Network</label>
-          <select class="select-field">
-            <option>Devnet</option>
+          <select class="select-field" id="settings-network">
+            <option selected>Devnet</option>
             <option>Testnet</option>
             <option>Mainnet-Beta</option>
           </select>
         </div>
         <div class="form-group">
           <label>RPC Endpoint</label>
-          <input type="text" class="input-field mono" value="https://api.devnet.solana.com" style="font-size: 0.85rem;">
+          <input type="text" class="input-field mono" value="https://api.devnet.solana.com" style="font-size: 0.85rem;" id="settings-rpc">
         </div>
         <div class="form-group">
           <label>Program ID</label>
-          <input type="text" class="input-field mono" value="SQueueProgram111111111111111111111111111" readonly style="font-size: 0.85rem; color: var(--text-tertiary);">
+          <input type="text" class="input-field mono" value="GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64" readonly style="font-size: 0.85rem; color: var(--sol-purple-light);">
+        </div>
+        <div class="form-group">
+          <label>Wallet Status</label>
+          <div style="padding: 12px; background: rgba(5,5,16,0.5); border-radius: var(--radius-md); font-family: var(--font-mono); font-size: 0.85rem;">
+            ${ws.connected
+      ? `<span style="color:#14F195;">● Connected</span> — ${ws.publicKey.slice(0, 8)}...${ws.publicKey.slice(-8)} <span style="color:var(--text-tertiary);">(${ws.balance.toFixed(4)} SOL)</span>`
+      : '<span style="color:var(--text-tertiary);">● Not connected</span>'}
+          </div>
         </div>
         <div class="form-group">
           <label class="flex items-center gap-md">
             <label class="toggle">
-              <input type="checkbox" checked>
+              <input type="checkbox" ${mode === 'live' ? 'checked' : ''} id="settings-live-data">
+              <span class="toggle-slider"></span>
+            </label>
+            Use live on-chain data (requires wallet + deployed program)
+          </label>
+        </div>
+        <div class="form-group">
+          <label class="flex items-center gap-md">
+            <label class="toggle">
+              <input type="checkbox" checked id="settings-realtime">
               <span class="toggle-slider"></span>
             </label>
             Enable real-time updates
@@ -636,14 +677,14 @@ function renderSettings() {
         <div class="form-group">
           <label class="flex items-center gap-md">
             <label class="toggle">
-              <input type="checkbox">
+              <input type="checkbox" checked id="settings-tx-confirm">
               <span class="toggle-slider"></span>
             </label>
             Show transaction confirmations
           </label>
         </div>
         <div class="form-actions">
-          <button class="btn btn-primary">💾 Save Settings</button>
+          <button class="btn btn-primary" id="save-settings-btn">💾 Save Settings</button>
         </div>
       </div>
     </div>
@@ -651,7 +692,7 @@ function renderSettings() {
 }
 
 function renderModal() {
-    return `
+  return `
     <div class="modal-overlay" id="job-detail-modal">
       <div class="modal-content">
         <div class="modal-header">
@@ -672,129 +713,166 @@ function renderModal() {
 
 // Helper functions
 function getStatusBadge(status) {
-    const badges = {
-        active: '<span class="badge badge-success"><span class="pulse-dot"></span> Active</span>',
-        paused: '<span class="badge badge-warning"><span class="pulse-dot"></span> Paused</span>',
-        stopped: '<span class="badge badge-error"><span class="pulse-dot"></span> Stopped</span>',
-        completed: '<span class="badge badge-success">✓ Completed</span>',
-        processing: '<span class="badge badge-processing"><span class="pulse-dot"></span> Processing</span>',
-        pending: '<span class="badge badge-pending">◌ Pending</span>',
-        failed: '<span class="badge badge-error">✗ Failed</span>',
-    };
-    return badges[status] || `<span class="badge">${status}</span>`;
+  const badges = {
+    active: '<span class="badge badge-success"><span class="pulse-dot"></span> Active</span>',
+    paused: '<span class="badge badge-warning"><span class="pulse-dot"></span> Paused</span>',
+    stopped: '<span class="badge badge-error"><span class="pulse-dot"></span> Stopped</span>',
+    completed: '<span class="badge badge-success">✓ Completed</span>',
+    processing: '<span class="badge badge-processing"><span class="pulse-dot"></span> Processing</span>',
+    pending: '<span class="badge badge-pending">◌ Pending</span>',
+    failed: '<span class="badge badge-error">✗ Failed</span>',
+  };
+  return badges[status] || `<span class="badge">${status}</span>`;
 }
 
 function getPriorityBadge(priority) {
-    const badges = {
-        high: '<span style="color: var(--color-error); font-size: 0.8rem; font-weight: 600;">🔴 High</span>',
-        medium: '<span style="color: var(--color-warning); font-size: 0.8rem; font-weight: 600;">🟡 Medium</span>',
-        low: '<span style="color: var(--sol-green); font-size: 0.8rem; font-weight: 600;">🟢 Low</span>',
-    };
-    return badges[priority] || priority;
+  const badges = {
+    high: '<span style="color: var(--color-error); font-size: 0.8rem; font-weight: 600;">🔴 High</span>',
+    medium: '<span style="color: var(--color-warning); font-size: 0.8rem; font-weight: 600;">🟡 Medium</span>',
+    low: '<span style="color: var(--sol-green); font-size: 0.8rem; font-weight: 600;">🟢 Low</span>',
+  };
+  return badges[priority] || priority;
 }
 
 export function initDashboard(page) {
-    // Cleanup previous animations
-    destroyAnimations();
+  // Cleanup previous animations
+  destroyAnimations();
 
-    // Initialize sidebar navigation
-    document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-        item.addEventListener('click', () => {
-            const nextPage = item.getAttribute('data-page');
-            window.location.hash = `/dashboard/${nextPage}`;
-        });
+  // Initialize sidebar navigation
+  document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => {
+      const nextPage = item.getAttribute('data-page');
+      window.location.hash = `/dashboard/${nextPage}`;
     });
+  });
 
-    // Mobile menu toggle
-    const mobileToggle = document.getElementById('mobile-menu-toggle');
-    const sidebar = document.getElementById('sidebar');
-    if (mobileToggle && sidebar) {
-        mobileToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
+  // Mobile menu toggle
+  const mobileToggle = document.getElementById('mobile-menu-toggle');
+  const sidebar = document.getElementById('sidebar');
+  if (mobileToggle && sidebar) {
+    mobileToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  }
+
+  // Sidebar wallet click
+  const sidebarWallet = document.getElementById('sidebar-wallet-area');
+  if (sidebarWallet) {
+    sidebarWallet.addEventListener('click', async () => {
+      const ws = getWalletState();
+      if (ws.connected) {
+        await disconnectWallet();
+        showToast('Wallet disconnected', 'info');
+      } else {
+        try {
+          await connectWallet();
+          showToast('Wallet connected!', 'success');
+        } catch (e) { /* handled in adapter */ }
+      }
+      // Re-render to update UI
+      window.location.hash = window.location.hash;
+    });
+  }
+
+  // Header wallet button
+  const headerWalletBtn = document.getElementById('header-wallet-btn');
+  if (headerWalletBtn) {
+    headerWalletBtn.addEventListener('click', async () => {
+      const ws = getWalletState();
+      if (ws.connected) {
+        await disconnectWallet();
+        showToast('Wallet disconnected', 'info');
+      } else {
+        try {
+          await connectWallet();
+          showToast('Wallet connected!', 'success');
+        } catch (e) { /* handled in adapter */ }
+      }
+      window.location.hash = window.location.hash;
+    });
+  }
+
+  // Job row click
+  document.querySelectorAll('.job-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const jobId = row.getAttribute('data-job-id');
+      showJobDetail(jobId);
+    });
+  });
+
+  // Modal close
+  const modal = document.getElementById('job-detail-modal');
+  if (modal) {
+    document.getElementById('close-modal')?.addEventListener('click', () => modal.classList.remove('active'));
+    document.getElementById('close-modal-2')?.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+  }
+
+  // Filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const filter = chip.getAttribute('data-filter');
+      filterJobs(filter);
+    });
+  });
+
+  // Count-up animations
+  document.querySelectorAll('[data-count-up]').forEach(el => {
+    const target = parseFloat(el.getAttribute('data-count-up'));
+    const suffix = el.getAttribute('data-suffix') || '';
+    animateValue(el, 0, target, 1500, suffix);
+  });
+
+  // Initialize canvas animations based on page
+  if (page === 'overview') {
+    const pipelineCanvas = document.getElementById('pipeline-canvas');
+    if (pipelineCanvas) {
+      pipelineAnim = new PipelineAnimation(pipelineCanvas);
+    }
+  }
+
+  if (page === 'analytics') {
+    const barCanvas = document.getElementById('bar-chart');
+    if (barCanvas) {
+      barChartAnim = new BarChartAnimation(barCanvas, MOCK_CHART_DATA.throughput, '#9945FF');
     }
 
-    // Job row click
-    document.querySelectorAll('.job-row').forEach(row => {
-        row.addEventListener('click', () => {
-            const jobId = row.getAttribute('data-job-id');
-            showJobDetail(jobId);
-        });
-    });
-
-    // Modal close
-    const modal = document.getElementById('job-detail-modal');
-    if (modal) {
-        document.getElementById('close-modal')?.addEventListener('click', () => modal.classList.remove('active'));
-        document.getElementById('close-modal-2')?.addEventListener('click', () => modal.classList.remove('active'));
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.classList.remove('active');
-        });
+    const lineCanvas = document.getElementById('line-chart');
+    if (lineCanvas) {
+      lineChartAnim = new LineChartAnimation(lineCanvas, [
+        { data: MOCK_CHART_DATA.lineData.completed, color: '#14F195' },
+        { data: MOCK_CHART_DATA.lineData.failed, color: '#ff4545' },
+      ]);
     }
+  }
 
-    // Filter chips
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            const filter = chip.getAttribute('data-filter');
-            filterJobs(filter);
-        });
+  // Scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        const animType = entry.target.getAttribute('data-animate');
+        if (animType) entry.target.classList.add(`animate-${animType}`);
+      }
     });
+  }, { threshold: 0.1 });
 
-    // Count-up animations
-    document.querySelectorAll('[data-count-up]').forEach(el => {
-        const target = parseFloat(el.getAttribute('data-count-up'));
-        const suffix = el.getAttribute('data-suffix') || '';
-        animateValue(el, 0, target, 1500, suffix);
-    });
-
-    // Initialize canvas animations based on page
-    if (page === 'overview') {
-        const pipelineCanvas = document.getElementById('pipeline-canvas');
-        if (pipelineCanvas) {
-            pipelineAnim = new PipelineAnimation(pipelineCanvas);
-        }
-    }
-
-    if (page === 'analytics') {
-        const barCanvas = document.getElementById('bar-chart');
-        if (barCanvas) {
-            barChartAnim = new BarChartAnimation(barCanvas, MOCK_CHART_DATA.throughput, '#9945FF');
-        }
-
-        const lineCanvas = document.getElementById('line-chart');
-        if (lineCanvas) {
-            lineChartAnim = new LineChartAnimation(lineCanvas, [
-                { data: MOCK_CHART_DATA.lineData.completed, color: '#14F195' },
-                { data: MOCK_CHART_DATA.lineData.failed, color: '#ff4545' },
-            ]);
-        }
-    }
-
-    // Scroll animations
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                const animType = entry.target.getAttribute('data-animate');
-                if (animType) entry.target.classList.add(`animate-${animType}`);
-            }
-        });
-    }, { threshold: 0.1 });
-
-    document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+  document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
 }
 
 function showJobDetail(jobId) {
-    const job = MOCK_JOBS.find(j => j.id === jobId);
-    if (!job) return;
+  const job = MOCK_JOBS.find(j => j.id === jobId);
+  if (!job) return;
 
-    const modal = document.getElementById('job-detail-modal');
-    const modalBody = document.getElementById('modal-body-content');
+  const modal = document.getElementById('job-detail-modal');
+  const modalBody = document.getElementById('modal-body-content');
 
-    if (modalBody) {
-        modalBody.innerHTML = `
+  if (modalBody) {
+    modalBody.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: var(--space-md);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span class="mono" style="color: var(--sol-purple-light); font-size: 0.9rem;">${job.id}</span>
@@ -838,45 +916,45 @@ function showJobDetail(jobId) {
         </div>
       </div>
     `;
-    }
+  }
 
-    if (modal) modal.classList.add('active');
+  if (modal) modal.classList.add('active');
 }
 
 function filterJobs(filter) {
-    const rows = document.querySelectorAll('#jobs-table-body tr');
-    rows.forEach(row => {
-        if (filter === 'all') {
-            row.style.display = '';
-        } else {
-            const status = row.getAttribute('data-status');
-            row.style.display = status === filter ? '' : 'none';
-        }
-    });
+  const rows = document.querySelectorAll('#jobs-table-body tr');
+  rows.forEach(row => {
+    if (filter === 'all') {
+      row.style.display = '';
+    } else {
+      const status = row.getAttribute('data-status');
+      row.style.display = status === filter ? '' : 'none';
+    }
+  });
 }
 
 function animateValue(el, start, end, duration, suffix) {
-    const startTime = performance.now();
-    const isFloat = !Number.isInteger(end);
+  const startTime = performance.now();
+  const isFloat = !Number.isInteger(end);
 
-    function update(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = start + (end - start) * eased;
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = start + (end - start) * eased;
 
-        el.textContent = (isFloat ? current.toFixed(1) : Math.floor(current).toLocaleString()) + suffix;
+    el.textContent = (isFloat ? current.toFixed(1) : Math.floor(current).toLocaleString()) + suffix;
 
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
+    if (progress < 1) {
+      requestAnimationFrame(update);
     }
+  }
 
-    requestAnimationFrame(update);
+  requestAnimationFrame(update);
 }
 
 function destroyAnimations() {
-    if (pipelineAnim) { pipelineAnim.destroy(); pipelineAnim = null; }
-    if (barChartAnim) { barChartAnim.destroy(); barChartAnim = null; }
-    if (lineChartAnim) { lineChartAnim.destroy(); lineChartAnim = null; }
+  if (pipelineAnim) { pipelineAnim.destroy(); pipelineAnim = null; }
+  if (barChartAnim) { barChartAnim.destroy(); barChartAnim = null; }
+  if (lineChartAnim) { lineChartAnim.destroy(); lineChartAnim = null; }
 }
