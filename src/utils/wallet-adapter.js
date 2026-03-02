@@ -180,14 +180,27 @@ export async function connectWallet(walletId) {
 
     try {
         const provider = walletConfig.getProvider();
+
+        // Hide picker overlay so wallet extension popup is not blocked
+        const overlay = document.getElementById('wallet-picker-overlay');
+        if (overlay) {
+            overlay.style.opacity = '0';
+            overlay.style.pointerEvents = 'none';
+        }
+
         const response = await provider.connect();
-        const publicKey = response.publicKey;
+        // Different wallets return publicKey differently
+        const publicKey = response?.publicKey || provider.publicKey;
+
+        if (!publicKey) {
+            throw new Error('Wallet did not return a public key');
+        }
 
         const connection = new Connection(DEVNET_RPC, 'confirmed');
         const wallet = {
             publicKey,
             signTransaction: (tx) => provider.signTransaction(tx),
-            signAllTransactions: (txs) => provider.signAllTransactions(txs),
+            signAllTransactions: (txs) => provider.signAllTransactions?.(txs) || Promise.all(txs.map(t => provider.signTransaction(t))),
         };
 
         const client = new SolQueueClient(connection, wallet);
@@ -215,6 +228,12 @@ export async function connectWallet(walletId) {
 
         return client;
     } catch (error) {
+        // Re-show picker so user can try another wallet
+        const overlay = document.getElementById('wallet-picker-overlay');
+        if (overlay) {
+            overlay.style.opacity = '';
+            overlay.style.pointerEvents = '';
+        }
         if (error.message?.includes('User rejected')) {
             showToast('Connection cancelled', 'info');
         } else {
