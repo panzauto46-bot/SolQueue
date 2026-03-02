@@ -1,0 +1,195 @@
+/**
+ * Mock data for SolQueue dashboard
+ */
+
+export const MOCK_STATS = {
+    totalJobs: 12847,
+    activeQueues: 8,
+    onlineWorkers: 24,
+    successRate: 97.3,
+    avgProcessingTime: '1.2s',
+    throughput: '842/hr',
+    pendingJobs: 156,
+    failedJobs: 23,
+};
+
+export const MOCK_QUEUES = [
+    {
+        id: 'q1',
+        name: 'email-notifications',
+        status: 'active',
+        pending: 45,
+        processing: 12,
+        completed: 3420,
+        failed: 8,
+        workers: 6,
+        maxRetries: 3,
+        priority: 'high',
+        createdAt: '2024-01-15T10:30:00Z',
+        throughput: '120/hr',
+    },
+    {
+        id: 'q2',
+        name: 'data-processing',
+        status: 'active',
+        pending: 89,
+        processing: 24,
+        completed: 5672,
+        failed: 12,
+        workers: 8,
+        maxRetries: 5,
+        priority: 'medium',
+        createdAt: '2024-01-15T11:00:00Z',
+        throughput: '250/hr',
+    },
+    {
+        id: 'q3',
+        name: 'image-resize',
+        status: 'active',
+        pending: 12,
+        processing: 4,
+        completed: 1890,
+        failed: 2,
+        workers: 4,
+        maxRetries: 2,
+        priority: 'low',
+        createdAt: '2024-01-16T09:00:00Z',
+        throughput: '80/hr',
+    },
+    {
+        id: 'q4',
+        name: 'report-generation',
+        status: 'paused',
+        pending: 67,
+        processing: 0,
+        completed: 945,
+        failed: 5,
+        workers: 3,
+        maxRetries: 3,
+        priority: 'medium',
+        createdAt: '2024-01-16T14:00:00Z',
+        throughput: '0/hr',
+    },
+    {
+        id: 'q5',
+        name: 'webhook-delivery',
+        status: 'active',
+        pending: 23,
+        processing: 8,
+        completed: 2156,
+        failed: 18,
+        workers: 5,
+        maxRetries: 5,
+        priority: 'high',
+        createdAt: '2024-01-17T08:00:00Z',
+        throughput: '180/hr',
+    },
+    {
+        id: 'q6',
+        name: 'log-aggregation',
+        status: 'active',
+        pending: 156,
+        processing: 32,
+        completed: 8923,
+        failed: 3,
+        workers: 10,
+        maxRetries: 2,
+        priority: 'low',
+        createdAt: '2024-01-17T10:00:00Z',
+        throughput: '350/hr',
+    },
+];
+
+export const MOCK_JOBS = [
+    { id: 'job-001', queue: 'email-notifications', name: 'send_welcome_email', status: 'completed', priority: 'high', payload: '{"to":"user@example.com","template":"welcome"}', result: 'sent', attempts: 1, createdAt: '2m ago', processedAt: '1m ago', worker: 'W-01' },
+    { id: 'job-002', queue: 'data-processing', name: 'aggregate_metrics', status: 'processing', priority: 'medium', payload: '{"metric":"daily_active","date":"2024-01-20"}', result: null, attempts: 1, createdAt: '30s ago', processedAt: null, worker: 'W-05' },
+    { id: 'job-003', queue: 'image-resize', name: 'resize_avatar', status: 'pending', priority: 'low', payload: '{"imageId":"img_abc123","size":"256x256"}', result: null, attempts: 0, createdAt: '10s ago', processedAt: null, worker: null },
+    { id: 'job-004', queue: 'webhook-delivery', name: 'deliver_payment_hook', status: 'failed', priority: 'high', payload: '{"url":"https://api.example.com/webhook","event":"payment.success"}', result: 'timeout', attempts: 3, createdAt: '5m ago', processedAt: '3m ago', worker: 'W-03' },
+    { id: 'job-005', queue: 'email-notifications', name: 'send_invoice', status: 'completed', priority: 'medium', payload: '{"to":"billing@corp.com","invoiceId":"INV-2024-001"}', result: 'sent', attempts: 1, createdAt: '8m ago', processedAt: '7m ago', worker: 'W-02' },
+    { id: 'job-006', queue: 'data-processing', name: 'sync_database', status: 'processing', priority: 'high', payload: '{"source":"postgres","target":"solana","table":"users"}', result: null, attempts: 1, createdAt: '1m ago', processedAt: null, worker: 'W-08' },
+    { id: 'job-007', queue: 'report-generation', name: 'gen_monthly_report', status: 'pending', priority: 'medium', payload: '{"month":"january","year":2024,"format":"pdf"}', result: null, attempts: 0, createdAt: '15s ago', processedAt: null, worker: null },
+    { id: 'job-008', queue: 'log-aggregation', name: 'collect_error_logs', status: 'completed', priority: 'low', payload: '{"service":"api-gateway","level":"error","last":"24h"}', result: '{"count":47}', attempts: 1, createdAt: '12m ago', processedAt: '11m ago', worker: 'W-10' },
+    { id: 'job-009', queue: 'webhook-delivery', name: 'notify_slack', status: 'completed', priority: 'medium', payload: '{"channel":"#alerts","message":"Deployment successful"}', result: 'delivered', attempts: 1, createdAt: '20m ago', processedAt: '19m ago', worker: 'W-04' },
+    { id: 'job-010', queue: 'data-processing', name: 'batch_transform', status: 'failed', priority: 'high', payload: '{"source":"csv","rows":50000,"transform":"normalize"}', result: 'out_of_memory', attempts: 2, createdAt: '25m ago', processedAt: '22m ago', worker: 'W-06' },
+    { id: 'job-011', queue: 'email-notifications', name: 'send_password_reset', status: 'completed', priority: 'high', payload: '{"to":"admin@corp.com","token":"rst_xyz789"}', result: 'sent', attempts: 1, createdAt: '30m ago', processedAt: '29m ago', worker: 'W-01' },
+    { id: 'job-012', queue: 'image-resize', name: 'generate_thumbnail', status: 'processing', priority: 'low', payload: '{"imageId":"img_def456","size":"128x128"}', result: null, attempts: 1, createdAt: '45s ago', processedAt: null, worker: 'W-07' },
+];
+
+export const MOCK_WORKERS = [
+    { id: 'W-01', name: 'worker-alpha', status: 'online', queue: 'email-notifications', jobsCompleted: 1245, jobsFailed: 3, uptime: '14d 6h', lastHeartbeat: '2s ago', avgProcessTime: '0.8s', address: '7xKX...9mPw' },
+    { id: 'W-02', name: 'worker-beta', status: 'online', queue: 'email-notifications', jobsCompleted: 1189, jobsFailed: 5, uptime: '12d 18h', lastHeartbeat: '1s ago', avgProcessTime: '0.9s', address: '3pFR...kL2x' },
+    { id: 'W-03', name: 'worker-gamma', status: 'online', queue: 'webhook-delivery', jobsCompleted: 890, jobsFailed: 15, uptime: '10d 4h', lastHeartbeat: '3s ago', avgProcessTime: '1.5s', address: '9dVQ...nB7y' },
+    { id: 'W-04', name: 'worker-delta', status: 'online', queue: 'webhook-delivery', jobsCompleted: 1067, jobsFailed: 8, uptime: '11d 22h', lastHeartbeat: '1s ago', avgProcessTime: '1.2s', address: '5kMT...wR4z' },
+    { id: 'W-05', name: 'worker-epsilon', status: 'online', queue: 'data-processing', jobsCompleted: 2340, jobsFailed: 6, uptime: '14d 6h', lastHeartbeat: '2s ago', avgProcessTime: '2.1s', address: '8nLP...qJ6v' },
+    { id: 'W-06', name: 'worker-zeta', status: 'offline', queue: 'data-processing', jobsCompleted: 1890, jobsFailed: 12, uptime: '0d 0h', lastHeartbeat: '2h ago', avgProcessTime: '2.5s', address: '2gHK...tP8m' },
+    { id: 'W-07', name: 'worker-eta', status: 'online', queue: 'image-resize', jobsCompleted: 756, jobsFailed: 1, uptime: '8d 12h', lastHeartbeat: '1s ago', avgProcessTime: '3.2s', address: '6rCN...xW3a' },
+    { id: 'W-08', name: 'worker-theta', status: 'online', queue: 'data-processing', jobsCompleted: 2100, jobsFailed: 4, uptime: '13d 8h', lastHeartbeat: '2s ago', avgProcessTime: '1.8s', address: '4bGS...yF5d' },
+];
+
+export const MOCK_ACTIVITIES = [
+    { type: 'completed', text: '<strong>send_welcome_email</strong> completed successfully', time: '1m ago', icon: '✓' },
+    { type: 'created', text: '<strong>resize_avatar</strong> added to queue', time: '2m ago', icon: '+' },
+    { type: 'claimed', text: '<strong>W-05</strong> claimed <strong>aggregate_metrics</strong>', time: '2m ago', icon: '→' },
+    { type: 'failed', text: '<strong>deliver_payment_hook</strong> failed after 3 attempts', time: '3m ago', icon: '✗' },
+    { type: 'completed', text: '<strong>send_invoice</strong> completed successfully', time: '7m ago', icon: '✓' },
+    { type: 'retrying', text: '<strong>batch_transform</strong> retrying (attempt 2/3)', time: '10m ago', icon: '↻' },
+    { type: 'created', text: '<strong>gen_monthly_report</strong> added to queue', time: '12m ago', icon: '+' },
+    { type: 'completed', text: '<strong>collect_error_logs</strong> completed successfully', time: '11m ago', icon: '✓' },
+    { type: 'completed', text: '<strong>notify_slack</strong> delivered to #alerts', time: '19m ago', icon: '✓' },
+    { type: 'claimed', text: '<strong>W-08</strong> claimed <strong>sync_database</strong>', time: '20m ago', icon: '→' },
+];
+
+export const MOCK_CHART_DATA = {
+    throughput: [
+        { label: 'Mon', value: 780 },
+        { label: 'Tue', value: 920 },
+        { label: 'Wed', value: 1100 },
+        { label: 'Thu', value: 890 },
+        { label: 'Fri', value: 1250 },
+        { label: 'Sat', value: 640 },
+        { label: 'Sun', value: 520 },
+    ],
+    lineData: {
+        completed: [120, 180, 150, 200, 230, 190, 250, 280, 260, 310, 290, 340],
+        failed: [5, 8, 3, 12, 6, 4, 9, 7, 11, 5, 8, 3],
+    },
+};
+
+export const FEATURES_DATA = [
+    {
+        icon: '📨',
+        title: 'Job Submission',
+        desc: 'Submit jobs with custom payloads, priorities, and TTL. Each job becomes a Solana account (PDA) with deterministic addressing.',
+        color: 'purple',
+    },
+    {
+        icon: '⚡',
+        title: 'Priority Queue',
+        desc: 'High, medium, and low priority lanes ensure critical jobs are processed first, mirroring enterprise queue systems.',
+        color: 'green',
+    },
+    {
+        icon: '🔄',
+        title: 'Retry & Backoff',
+        desc: 'Configurable retry policies with exponential backoff. Failed jobs automatically re-enter the queue with attempt tracking.',
+        color: 'cyan',
+    },
+    {
+        icon: '👷',
+        title: 'Worker Registry',
+        desc: 'Workers register on-chain and claim jobs atomically. Heartbeat mechanism ensures liveness and prevents stale claims.',
+        color: 'blue',
+    },
+    {
+        icon: '🔒',
+        title: 'Atomic Claims',
+        desc: 'Job claiming uses Solana\'s native transaction atomicity — no double-processing, no race conditions, no distributed locks needed.',
+        color: 'pink',
+    },
+    {
+        icon: '📊',
+        title: 'On-chain Analytics',
+        desc: 'Queue metrics, success rates, and throughput stored on-chain. Fully transparent and auditable processing pipeline.',
+        color: 'orange',
+    },
+];
