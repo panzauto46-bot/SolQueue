@@ -333,15 +333,15 @@ anchor test
 - [x] Responsive design & micro-interactions
 
 ### Phase 2: Solana Program (Rust/Anchor) 🔧
-- [ ] Define account structs (QueueConfig, JobAccount, WorkerAccount)
-- [ ] Implement `create_queue` instruction
-- [ ] Implement `submit_job` with priority system
-- [ ] Implement `claim_job` with atomic claiming
-- [ ] Implement `complete_job` and `fail_job`
-- [ ] Implement `retry_job` with exponential backoff
-- [ ] Implement `register_worker` with heartbeat
-- [ ] Implement `pause_queue` and `resume_queue`
-- [ ] Custom error types
+- [x] Define account structs (QueueConfig, JobAccount, WorkerAccount)
+- [x] Implement `create_queue` instruction
+- [x] Implement `submit_job` with priority system
+- [x] Implement `claim_job` with atomic claiming
+- [x] Implement `complete_job` and `fail_job`
+- [x] Implement `retry_job` with exponential backoff
+- [x] Implement `register_worker` with heartbeat
+- [x] Implement `pause_queue` and `resume_queue`
+- [x] Custom error types
 - [ ] Deploy to Devnet
 - [ ] Write integration tests
 

@@ -141,26 +141,26 @@ pub struct WorkerAccount {
 
 ### Tasks
 
-- [ ] Initialize Anchor project structure
-- [ ] Define `QueueConfig` account struct
-- [ ] Define `JobAccount` account struct
-- [ ] Define `WorkerAccount` account struct
-- [ ] Define enums: `JobStatus`, `Priority`, `WorkerStatus`
-- [ ] Define custom `ErrorCode` enum
-- [ ] Implement `create_queue` instruction
-- [ ] Implement `submit_job` with priority assignment
-- [ ] Implement `claim_job` with atomic state transition
-- [ ] Implement `complete_job` with result storage
-- [ ] Implement `fail_job` with error recording
-- [ ] Implement `retry_job` with attempt counter check
-- [ ] Implement `register_worker` with PDA derivation
-- [ ] Implement `deregister_worker`
-- [ ] Implement `pause_queue` / `resume_queue`
-- [ ] Add account size calculations
-- [ ] Add proper access control (authority checks)
-- [ ] Build program: `anchor build`
+- [x] Initialize Anchor project structure
+- [x] Define `QueueConfig` account struct
+- [x] Define `JobAccount` account struct
+- [x] Define `WorkerAccount` account struct
+- [x] Define enums: `JobStatus`, `Priority`, `WorkerStatus`
+- [x] Define custom `ErrorCode` enum
+- [x] Implement `create_queue` instruction
+- [x] Implement `submit_job` with priority assignment
+- [x] Implement `claim_job` with atomic state transition
+- [x] Implement `complete_job` with result storage
+- [x] Implement `fail_job` with error recording
+- [x] Implement `retry_job` with attempt counter check
+- [x] Implement `register_worker` with PDA derivation
+- [x] Implement `deregister_worker`
+- [x] Implement `pause_queue` / `resume_queue`
+- [x] Add account size calculations
+- [x] Add proper access control (authority checks)
+- [x] Build program: `anchor build`
 - [ ] Deploy to Devnet: `anchor deploy`
-- [ ] Record Program ID and update Anchor.toml
+- [x] Record Program ID and update Anchor.toml
 
 ---
 

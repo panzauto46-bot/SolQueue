@@ -7,7 +7,7 @@ pub mod instructions;
 use instructions::*;
 
 // Program ID — will be updated after first build
-declare_id!("11111111111111111111111111111111");
+declare_id!("GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64");
 
 /// # SolQueue — On-Chain Job Queue System
 ///
