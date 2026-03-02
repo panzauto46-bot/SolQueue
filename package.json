@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cli": "node cli/index.js"
+  },
+  "bin": {
+    "solqueue": "cli/index.js"
   },
   "devDependencies": {
     "vite": "^7.3.1",
