@@ -11,9 +11,10 @@
 
 <p align="center">
   <a href="https://solana.com"><img src="https://img.shields.io/badge/Built_on-Solana-9945FF?style=for-the-badge&logo=solana&logoColor=white" alt="Solana"/></a>
-  <a href="https://www.anchor-lang.com/"><img src="https://img.shields.io/badge/Framework-Anchor-14F195?style=for-the-badge" alt="Anchor"/></a>
+  <a href="https://www.anchor-lang.com/"><img src="https://img.shields.io/badge/Framework-Anchor_v0.30.1-14F195?style=for-the-badge" alt="Anchor"/></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Language-Rust-orange?style=for-the-badge&logo=rust&logoColor=white" alt="Rust"/></a>
   <a href="#license"><img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"/></a>
+  <img src="https://img.shields.io/badge/Phase_2-Solana_Program_✅-14F195?style=for-the-badge" alt="Phase 2"/>
 </p>
 
 <p align="center">
@@ -309,14 +310,19 @@ anchor test
 | Item | Details |
 |------|---------|
 | **Network** | Solana Devnet |
-| **Program ID** | `[To be deployed]` |
-| **Explorer** | [View on Solscan](https://solscan.io/?cluster=devnet) |
+| **Program ID** | `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64` |
+| **Anchor Version** | `0.30.1` |
+| **Rust Toolchain** | `1.93.1` |
+| **Solana CLI** | `2.1.11 (Agave)` |
+| **Build Status** | ✅ Compiled successfully |
+| **Deploy Status** | ⏳ Awaiting devnet SOL airdrop |
+| **Explorer** | [View on Solscan](https://solscan.io/account/GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64?cluster=devnet) |
 
 ### Transaction Links
-- `create_queue` — [View Transaction](#)
-- `submit_job` — [View Transaction](#)
-- `claim_job` — [View Transaction](#)
-- `complete_job` — [View Transaction](#)
+- `create_queue` — [View Transaction](#) *(pending deployment)*
+- `submit_job` — [View Transaction](#) *(pending deployment)*
+- `claim_job` — [View Transaction](#) *(pending deployment)*
+- `complete_job` — [View Transaction](#) *(pending deployment)*
 
 ---
 
@@ -340,18 +346,22 @@ anchor test
 - [x] Job detail modal
 - [x] Responsive design & micro-interactions
 
-### Phase 2: Solana Program (Rust/Anchor) 🔧
+### Phase 2: Solana Program (Rust/Anchor) ✅
 - [x] Define account structs (QueueConfig, JobAccount, WorkerAccount)
 - [x] Implement `create_queue` instruction
 - [x] Implement `submit_job` with priority system
 - [x] Implement `claim_job` with atomic claiming
 - [x] Implement `complete_job` and `fail_job`
-- [x] Implement `retry_job` with exponential backoff
-- [x] Implement `register_worker` with heartbeat
+- [x] Implement `retry_job` with attempt counter check
+- [x] Implement `register_worker` with PDA derivation
+- [x] Implement `deregister_worker`
 - [x] Implement `pause_queue` and `resume_queue`
-- [x] Custom error types
-- [ ] Deploy to Devnet
-- [ ] Write integration tests
+- [x] Custom error types (SolQueueError enum)
+- [x] Account size calculations (InitSpace)
+- [x] Proper access control (authority checks)
+- [x] `anchor build` — Program compiled (ID: `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64`)
+- [x] Integration test suite written (TypeScript/Mocha)
+- [ ] Deploy to Devnet (awaiting SOL airdrop)
 
 ### Phase 3: Integration & Client 🔌
 - [ ] TypeScript SDK for program interaction
