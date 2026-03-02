@@ -1,0 +1,295 @@
+/* ═══════════════════════════════════════════════
+   WALLET ADAPTER STYLES
+   ═══════════════════════════════════════════════ */
+
+.wallet-adapter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wallet-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.wallet-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(153, 69, 255, 0.4);
+  filter: brightness(1.1);
+}
+
+.wallet-btn:active {
+  transform: translateY(0);
+}
+
+.wallet-icon {
+  font-size: 16px;
+}
+
+.wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: rgba(20, 241, 149, 0.08);
+  border: 1px solid rgba(20, 241, 149, 0.2);
+  border-radius: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+.wallet-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wallet-status-dot {
+  width: 8px;
+  height: 8px;
+  background: #14F195;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(20, 241, 149, 0.6);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.wallet-address {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #e0e0e0;
+  letter-spacing: 0.5px;
+}
+
+.wallet-balance {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #14F195;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: rgba(20, 241, 149, 0.1);
+  border-radius: 4px;
+}
+
+.wallet-disconnect-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.2);
+  border-radius: 50%;
+  color: #ff4444;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wallet-disconnect-btn:hover {
+  background: rgba(255, 68, 68, 0.25);
+  transform: scale(1.1);
+}
+
+/* ═══════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════════ */
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #fff;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: translateX(120%);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+  max-width: 420px;
+}
+
+.toast-visible {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast-success {
+  background: rgba(20, 241, 149, 0.15);
+  border: 1px solid rgba(20, 241, 149, 0.3);
+}
+
+.toast-error {
+  background: rgba(255, 68, 68, 0.15);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.toast-info {
+  background: rgba(82, 130, 255, 0.15);
+  border: 1px solid rgba(82, 130, 255, 0.3);
+}
+
+.toast-loading {
+  background: rgba(153, 69, 255, 0.15);
+  border: 1px solid rgba(153, 69, 255, 0.3);
+}
+
+.toast-icon {
+  font-size: 16px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.toast-success .toast-icon { color: #14F195; }
+.toast-error .toast-icon { color: #ff4444; }
+.toast-info .toast-icon { color: #5282ff; }
+.toast-loading .toast-icon { color: #9945FF; }
+
+.toast-message {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.toast-message a {
+  color: #14F195;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.toast-message a:hover {
+  text-decoration: underline;
+}
+
+.toast-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════
+   TRANSACTION LINK BADGES
+   ═══════════════════════════════════════════════ */
+
+.tx-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(153, 69, 255, 0.1);
+  border: 1px solid rgba(153, 69, 255, 0.2);
+  border-radius: 4px;
+  color: #9945FF;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.tx-link:hover {
+  background: rgba(153, 69, 255, 0.2);
+  border-color: rgba(153, 69, 255, 0.4);
+  color: #b96fff;
+}
+
+/* ═══════════════════════════════════════════════
+   NETWORK INDICATOR
+   ═══════════════════════════════════════════════ */
+
+.network-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.network-badge.devnet {
+  background: rgba(153, 69, 255, 0.12);
+  border: 1px solid rgba(153, 69, 255, 0.25);
+  color: #b96fff;
+}
+
+.network-badge.mainnet {
+  background: rgba(20, 241, 149, 0.12);
+  border: 1px solid rgba(20, 241, 149, 0.25);
+  color: #14F195;
+}
+
+.network-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.devnet .network-dot { background: #9945FF; }
+.mainnet .network-dot { background: #14F195; }
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .toast-container {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+  }
+  
+  .toast {
+    max-width: 100%;
+  }
+
+  .wallet-info {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

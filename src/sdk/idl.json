@@ -1,0 +1,1480 @@
+{
+  "address": "GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64",
+  "metadata": {
+    "name": "solqueue",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "On-chain job queue system for Solana — rebuilding backend message queue patterns"
+  },
+  "docs": [
+    "# SolQueue — On-Chain Job Queue System",
+    "",
+    "SolQueue rebuilds the traditional backend job queue pattern",
+    "(Redis Queue, RabbitMQ, BullMQ) as a Solana on-chain program.",
+    "",
+    "## Key Design Decisions",
+    "",
+    "1. **PDA-based State**: Each queue, job, and worker is a PDA,",
+    "enabling deterministic addressing and efficient lookups.",
+    "",
+    "2. **Atomic Claims**: Solana's runtime provides atomicity —",
+    "no distributed locks are needed for job claiming.",
+    "",
+    "3. **State Machine**: Jobs follow a strict lifecycle:",
+    "`Pending → Processing → Completed/Failed`",
+    "",
+    "4. **Counter-based Metrics**: Queue counters are updated atomically",
+    "with each operation for real-time analytics.",
+    "",
+    "## Web2 → Solana Pattern Mapping",
+    "",
+    "| Web2 (Redis/BullMQ)       | Solana (SolQueue)           |",
+    "|---------------------------|-----------------------------|",
+    "| Queue instance            | QueueConfig PDA             |",
+    "| Job data (JSON)           | JobAccount PDA              |",
+    "| Worker process            | WorkerAccount PDA           |",
+    "| BRPOPLPUSH + SETNX lock   | Atomic `claim_job` tx       |",
+    "| done(null, result)        | `complete_job` instruction  |",
+    "| done(error)               | `fail_job` instruction      |",
+    "| queue.add(data, opts)     | `submit_job` instruction    |",
+    "| new Worker(fn)            | `register_worker` instr.    |",
+    "| queue.pause()             | `pause_queue` instruction   |",
+    ""
+  ],
+  "instructions": [
+    {
+      "name": "claim_job",
+      "docs": [
+        "Worker claims a pending job for processing (atomic operation).",
+        "",
+        "This is the core differentiator from Web2 queues — Solana's runtime",
+        "provides atomic state transitions, eliminating the need for",
+        "distributed locks (Redis SETNX, Redlock, etc.)."
+      ],
+      "discriminator": [
+        9,
+        160,
+        5,
+        231,
+        116,
+        123,
+        198,
+        14
+      ],
+      "accounts": [
+        {
+          "name": "worker_authority",
+          "docs": [
+            "The worker's authority (signer)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "worker_account",
+          "docs": [
+            "The worker account — must be registered and online"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  111,
+                  114,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "worker_authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue configuration"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_account",
+          "docs": [
+            "The job to claim — must be in Pending status"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "job_account.job_id",
+                "account": "JobAccount"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "complete_job",
+      "docs": [
+        "Mark a job as successfully completed with optional result data.",
+        "",
+        "# Arguments",
+        "* `result` - Result data as bytes (max 256 bytes)"
+      ],
+      "discriminator": [
+        221,
+        216,
+        225,
+        72,
+        101,
+        250,
+        3,
+        11
+      ],
+      "accounts": [
+        {
+          "name": "worker_authority",
+          "docs": [
+            "The worker's authority (signer) — must be the assigned worker"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "worker_account",
+          "docs": [
+            "The worker account"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  111,
+                  114,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "worker_authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue configuration"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_account",
+          "docs": [
+            "The job to complete"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "job_account.job_id",
+                "account": "JobAccount"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "result",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "create_queue",
+      "docs": [
+        "Create a new job queue with specified configuration.",
+        "",
+        "# Arguments",
+        "* `name` - Queue name (max 32 chars), used in PDA derivation",
+        "* `max_workers` - Maximum concurrent workers allowed",
+        "* `max_retries` - Default max retry attempts per job",
+        "* `default_priority` - Default priority (0=Low, 1=Medium, 2=High)",
+        "* `job_ttl` - Time-to-live for jobs in seconds"
+      ],
+      "discriminator": [
+        92,
+        193,
+        143,
+        97,
+        164,
+        230,
+        128,
+        134
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The queue authority (creator and owner)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue configuration PDA"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "name"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program for account creation"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "max_workers",
+          "type": "u8"
+        },
+        {
+          "name": "max_retries",
+          "type": "u8"
+        },
+        {
+          "name": "default_priority",
+          "type": "u8"
+        },
+        {
+          "name": "job_ttl",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "deregister_worker",
+      "docs": [
+        "Deregister a worker from a queue (closes account, returns rent)."
+      ],
+      "discriminator": [
+        169,
+        158,
+        198,
+        70,
+        128,
+        77,
+        176,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The authority — must be the worker owner or queue authority"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "worker_account",
+          "docs": [
+            "The worker account to close"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  111,
+                  114,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "worker_account.authority",
+                "account": "WorkerAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue configuration"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "fail_job",
+      "docs": [
+        "Mark a job as failed with an error message.",
+        "",
+        "# Arguments",
+        "* `error_message` - Human-readable error description (max 128 chars)"
+      ],
+      "discriminator": [
+        211,
+        222,
+        65,
+        39,
+        115,
+        107,
+        125,
+        43
+      ],
+      "accounts": [
+        {
+          "name": "worker_authority",
+          "docs": [
+            "The worker's authority (signer)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "worker_account",
+          "docs": [
+            "The worker account"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  111,
+                  114,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "worker_authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue configuration"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_account",
+          "docs": [
+            "The job to fail"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "job_account.job_id",
+                "account": "JobAccount"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "error_message",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "pause_queue",
+      "docs": [
+        "Pause or resume a queue. Only the queue authority can do this.",
+        "",
+        "# Arguments",
+        "* `paused` - true to pause, false to resume"
+      ],
+      "discriminator": [
+        212,
+        120,
+        83,
+        249,
+        178,
+        72,
+        239,
+        55
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The queue authority (only they can pause/resume)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue configuration"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "register_worker",
+      "docs": [
+        "Register a new worker for a queue.",
+        "",
+        "# Arguments",
+        "* `worker_id` - Human-readable worker identifier (max 32 chars)"
+      ],
+      "discriminator": [
+        22,
+        253,
+        23,
+        225,
+        230,
+        31,
+        6,
+        192
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The worker's wallet (signer and payer)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "worker_account",
+          "docs": [
+            "The worker account PDA"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  111,
+                  114,
+                  107,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue to register for"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program for account creation"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "worker_id",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "retry_job",
+      "docs": [
+        "Re-queue a failed job for retry (if retries remain)."
+      ],
+      "discriminator": [
+        244,
+        190,
+        220,
+        46,
+        109,
+        6,
+        104,
+        200
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The authority — must be the queue authority or job creator"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue configuration"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_account",
+          "docs": [
+            "The job to retry"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "job_account.job_id",
+                "account": "JobAccount"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "submit_job",
+      "docs": [
+        "Submit a new job to a queue.",
+        "",
+        "# Arguments",
+        "* `payload` - Job data as bytes (max 512 bytes)",
+        "* `priority` - Priority level (0=Low, 1=Medium, 2=High)"
+      ],
+      "discriminator": [
+        250,
+        129,
+        161,
+        132,
+        254,
+        161,
+        34,
+        107
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "docs": [
+            "The job creator (pays for the account)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "queue_config",
+          "docs": [
+            "The queue to submit the job to"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  113,
+                  117,
+                  101,
+                  117,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.authority",
+                "account": "QueueConfig"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.name",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "job_account",
+          "docs": [
+            "The job account PDA"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  106,
+                  111,
+                  98
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "queue_config"
+              },
+              {
+                "kind": "account",
+                "path": "queue_config.total_jobs",
+                "account": "QueueConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program for account creation"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "payload",
+          "type": "bytes"
+        },
+        {
+          "name": "priority",
+          "type": "u8"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "JobAccount",
+      "discriminator": [
+        91,
+        16,
+        162,
+        5,
+        45,
+        210,
+        125,
+        65
+      ]
+    },
+    {
+      "name": "QueueConfig",
+      "discriminator": [
+        60,
+        225,
+        7,
+        92,
+        142,
+        69,
+        96,
+        68
+      ]
+    },
+    {
+      "name": "WorkerAccount",
+      "discriminator": [
+        49,
+        236,
+        66,
+        81,
+        213,
+        189,
+        109,
+        232
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "QueueNameTooLong",
+      "msg": "Queue name too long (max 32 characters)"
+    },
+    {
+      "code": 6001,
+      "name": "QueuePaused",
+      "msg": "Queue is paused"
+    },
+    {
+      "code": 6002,
+      "name": "MaxWorkersReached",
+      "msg": "Queue has reached maximum worker capacity"
+    },
+    {
+      "code": 6003,
+      "name": "UnauthorizedQueueAction",
+      "msg": "Unauthorized: only queue authority can perform this action"
+    },
+    {
+      "code": 6004,
+      "name": "PayloadTooLarge",
+      "msg": "Job payload too large (max 512 bytes)"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidJobStatus",
+      "msg": "Invalid job status for this operation"
+    },
+    {
+      "code": 6006,
+      "name": "JobExpired",
+      "msg": "Job has expired"
+    },
+    {
+      "code": 6007,
+      "name": "MaxRetriesExceeded",
+      "msg": "Job has exhausted all retry attempts"
+    },
+    {
+      "code": 6008,
+      "name": "ResultTooLarge",
+      "msg": "Result data too large (max 256 bytes)"
+    },
+    {
+      "code": 6009,
+      "name": "ErrorMessageTooLong",
+      "msg": "Error message too long (max 128 characters)"
+    },
+    {
+      "code": 6010,
+      "name": "WorkerNotRegistered",
+      "msg": "Worker is not registered for this queue"
+    },
+    {
+      "code": 6011,
+      "name": "WorkerNotOnline",
+      "msg": "Worker is not online"
+    },
+    {
+      "code": 6012,
+      "name": "WorkerNotAssigned",
+      "msg": "Worker is not assigned to this job"
+    },
+    {
+      "code": 6013,
+      "name": "WorkerIdTooLong",
+      "msg": "Worker ID too long (max 32 characters)"
+    },
+    {
+      "code": 6014,
+      "name": "WorkerAlreadyRegistered",
+      "msg": "Worker is already registered"
+    },
+    {
+      "code": 6015,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidPriority",
+      "msg": "Invalid priority value"
+    }
+  ],
+  "types": [
+    {
+      "name": "JobAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "queue",
+            "docs": [
+              "The queue this job belongs to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "docs": [
+              "The wallet that submitted this job"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "worker",
+            "docs": [
+              "The worker currently processing (None if pending)"
+            ],
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "job_id",
+            "docs": [
+              "Unique job ID within the queue"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "payload",
+            "docs": [
+              "Job payload data"
+            ],
+            "type": "bytes"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Current job status"
+            ],
+            "type": {
+              "defined": {
+                "name": "JobStatus"
+              }
+            }
+          },
+          {
+            "name": "priority",
+            "docs": [
+              "Job priority level"
+            ],
+            "type": {
+              "defined": {
+                "name": "Priority"
+              }
+            }
+          },
+          {
+            "name": "attempts",
+            "docs": [
+              "Number of processing attempts"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "max_retries",
+            "docs": [
+              "Max retries for this specific job"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "result",
+            "docs": [
+              "Result data (on completion)"
+            ],
+            "type": "bytes"
+          },
+          {
+            "name": "error_message",
+            "docs": [
+              "Error message (on failure)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "created_at",
+            "docs": [
+              "When the job was created"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "claimed_at",
+            "docs": [
+              "When a worker claimed the job"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "completed_at",
+            "docs": [
+              "When the job completed/failed"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "expires_at",
+            "docs": [
+              "When the job expires (created_at + ttl)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "JobStatus",
+      "docs": [
+        "Job status representing the lifecycle state"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pending"
+          },
+          {
+            "name": "Processing"
+          },
+          {
+            "name": "Completed"
+          },
+          {
+            "name": "Failed"
+          },
+          {
+            "name": "Expired"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Priority",
+      "docs": [
+        "Priority level for jobs"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Low"
+          },
+          {
+            "name": "Medium"
+          },
+          {
+            "name": "High"
+          }
+        ]
+      }
+    },
+    {
+      "name": "QueueConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "The authority (owner) of this queue"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Human-readable queue name"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "max_workers",
+            "docs": [
+              "Maximum number of concurrent workers"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "max_retries",
+            "docs": [
+              "Maximum retry attempts per job"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "default_priority",
+            "docs": [
+              "Default priority for new jobs"
+            ],
+            "type": {
+              "defined": {
+                "name": "Priority"
+              }
+            }
+          },
+          {
+            "name": "job_ttl",
+            "docs": [
+              "Job time-to-live in seconds"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "is_paused",
+            "docs": [
+              "Whether the queue is paused"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "total_jobs",
+            "docs": [
+              "Total jobs ever submitted"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "completed_jobs",
+            "docs": [
+              "Total completed jobs"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "failed_jobs",
+            "docs": [
+              "Total failed jobs (after all retries exhausted)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pending_jobs",
+            "docs": [
+              "Currently pending jobs count"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "processing_jobs",
+            "docs": [
+              "Currently processing jobs count"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "worker_count",
+            "docs": [
+              "Number of registered workers"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "created_at",
+            "docs": [
+              "Creation timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "docs": [
+              "Last activity timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WorkerAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "The worker's wallet address"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "queue",
+            "docs": [
+              "The queue this worker is registered to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "worker_id",
+            "docs": [
+              "Human-readable worker name/ID"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Worker status"
+            ],
+            "type": {
+              "defined": {
+                "name": "WorkerStatus"
+              }
+            }
+          },
+          {
+            "name": "jobs_completed",
+            "docs": [
+              "Total jobs completed by this worker"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "jobs_failed",
+            "docs": [
+              "Total jobs failed by this worker"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_heartbeat",
+            "docs": [
+              "Last heartbeat/activity timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "registered_at",
+            "docs": [
+              "Registration timestamp"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WorkerStatus",
+      "docs": [
+        "Worker status"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Online"
+          },
+          {
+            "name": "Offline"
+          },
+          {
+            "name": "Suspended"
+          }
+        ]
+      }
+    }
+  ]
+}
