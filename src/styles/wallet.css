@@ -390,7 +390,7 @@
 }
 
 .wallet-picker-item.installed:hover {
-  background: rgba(var(--wallet-color, 153, 69, 255), 0.1);
+  background: rgba(var(--wallet-color-rgb, 153, 69, 255), 0.12);
   border-color: rgba(153, 69, 255, 0.3);
   transform: translateX(4px);
 }
@@ -401,8 +401,18 @@
 }
 
 .wallet-picker-icon {
-  font-size: 24px;
-  min-width: 32px;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   text-align: center;
 }
 

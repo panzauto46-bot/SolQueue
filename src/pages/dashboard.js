@@ -129,7 +129,7 @@ function renderTopHeader(activePage) {
           Devnet
         </div>
         <button class="wallet-btn" id="header-wallet-btn" title="${getWalletState().connected ? 'Wallet Connected' : 'Connect Wallet'}">
-          <span class="wallet-icon">👻</span>
+          <span class="wallet-icon">WL</span>
           <span>${getWalletState().connected ? getWalletState().publicKey.slice(0, 4) + '...' + getWalletState().publicKey.slice(-4) : 'Connect'}</span>
         </button>
         <button class="btn btn-icon btn-ghost notification-btn" id="notifications-btn">

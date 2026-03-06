@@ -333,8 +333,12 @@ powershell -ExecutionPolicy Bypass -File scripts/deploy-devnet.ps1
 ### 5. Run Tests
 
 ```bash
-anchor test
+anchor test --skip-build
 ```
+
+> Recommended flow on recent Rust toolchains:
+> 1) `anchor build --no-idl`
+> 2) `anchor test --skip-build`
 
 ---
 
@@ -345,7 +349,7 @@ anchor test
 | **Network** | Solana Devnet |
 | **Program ID** | `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64` |
 | **Anchor Version** | `0.30.1` |
-| **Rust Toolchain** | `1.93.1` |
+| **Rust Toolchain** | `1.94.0` (IDL skipped via `--no-idl`) |
 | **Solana CLI** | `2.1.11 (Agave)` |
 | **Build Status** | ✅ Compiled successfully |
 | **Deploy Status** | ✅ Deployed to Devnet (March 6, 2026) |
@@ -395,7 +399,7 @@ anchor test
 - [x] Custom error types (SolQueueError enum)
 - [x] Account size calculations (InitSpace)
 - [x] Proper access control (authority checks)
-- [x] `anchor build` — Program compiled (ID: `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64`)
+- [x] `anchor build --no-idl` — Program compiled (ID: `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64`)
 - [x] Integration test suite written (TypeScript/Mocha)
 - [x] Deploy to Devnet
 
@@ -432,13 +436,13 @@ npm run build
 ### Solana Program
 ```bash
 # Run all tests
-anchor test
+anchor test --skip-build
 
 # Run specific test
-anchor test -- --grep "create_queue"
+anchor test --skip-build -- --grep "create_queue"
 
 # Test with logs
-anchor test -- --verbose
+anchor test --skip-build -- --verbose
 ```
 
 ---

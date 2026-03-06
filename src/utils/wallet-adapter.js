@@ -20,8 +20,9 @@ const WALLET_CONFIGS = [
     {
         id: 'phantom',
         name: 'Phantom',
-        icon: '👻',
+        icon: 'PH',
         color: '#ab9ff2',
+        colorRgb: '171, 159, 242',
         url: 'https://phantom.app/',
         detect: () => window.phantom?.solana?.isPhantom || window.solana?.isPhantom,
         getProvider: () => window.phantom?.solana || window.solana,
@@ -29,8 +30,9 @@ const WALLET_CONFIGS = [
     {
         id: 'solflare',
         name: 'Solflare',
-        icon: '🔆',
+        icon: 'SF',
         color: '#fc7227',
+        colorRgb: '252, 114, 39',
         url: 'https://solflare.com/',
         detect: () => window.solflare?.isSolflare,
         getProvider: () => window.solflare,
@@ -38,8 +40,9 @@ const WALLET_CONFIGS = [
     {
         id: 'backpack',
         name: 'Backpack',
-        icon: '🎒',
+        icon: 'BP',
         color: '#e33e3f',
+        colorRgb: '227, 62, 63',
         url: 'https://backpack.app/',
         detect: () => window.backpack?.isBackpack,
         getProvider: () => window.backpack,
@@ -47,8 +50,9 @@ const WALLET_CONFIGS = [
     {
         id: 'bitget',
         name: 'Bitget Wallet',
-        icon: '💎',
+        icon: 'BG',
         color: '#00d4aa',
+        colorRgb: '0, 212, 170',
         url: 'https://web3.bitget.com/',
         detect: () => window.bitkeep?.solana || window.bitget?.solana,
         getProvider: () => window.bitkeep?.solana || window.bitget?.solana,
@@ -56,8 +60,9 @@ const WALLET_CONFIGS = [
     {
         id: 'coin98',
         name: 'Coin98',
-        icon: '🪙',
+        icon: 'C98',
         color: '#d9b432',
+        colorRgb: '217, 180, 50',
         url: 'https://coin98.com/',
         detect: () => window.coin98?.sol,
         getProvider: () => window.coin98?.sol,
@@ -65,8 +70,9 @@ const WALLET_CONFIGS = [
     {
         id: 'okx',
         name: 'OKX Wallet',
-        icon: '⭕',
+        icon: 'OKX',
         color: '#ffffff',
+        colorRgb: '255, 255, 255',
         url: 'https://www.okx.com/web3',
         detect: () => window.okxwallet?.solana,
         getProvider: () => window.okxwallet?.solana,
@@ -74,8 +80,9 @@ const WALLET_CONFIGS = [
     {
         id: 'trust',
         name: 'Trust Wallet',
-        icon: '🛡️',
+        icon: 'TW',
         color: '#3375BB',
+        colorRgb: '51, 117, 187',
         url: 'https://trustwallet.com/',
         detect: () => window.trustwallet?.solana,
         getProvider: () => window.trustwallet?.solana,
@@ -83,8 +90,9 @@ const WALLET_CONFIGS = [
     {
         id: 'coinbase',
         name: 'Coinbase Wallet',
-        icon: '🔵',
+        icon: 'CB',
         color: '#0052ff',
+        colorRgb: '0, 82, 255',
         url: 'https://www.coinbase.com/wallet',
         detect: () => window.coinbaseSolana,
         getProvider: () => window.coinbaseSolana,
@@ -304,7 +312,7 @@ export async function refreshBalance() {
 export function updateDashboardWalletUI(state) {
     const addr = state.publicKey;
     const short = addr ? `${addr.slice(0, 4)}...${addr.slice(-4)}` : '';
-    const icon = state.walletIcon || '🔗';
+    const icon = state.walletIcon || 'WL';
     const name = state.walletName || 'Wallet';
 
     // Update sidebar wallet area
@@ -344,7 +352,7 @@ export function updateDashboardWalletUI(state) {
             headerBtn.style.border = '1px solid rgba(20, 241, 149, 0.3)';
         } else {
             headerBtn.innerHTML = `
-                <span class="wallet-icon">🔗</span>
+                <span class="wallet-icon">WL</span>
                 <span>Connect</span>
             `;
             headerBtn.title = 'Connect Wallet';
@@ -363,8 +371,6 @@ function showWalletPicker() {
     closeWalletPicker();
 
     const wallets = getAllWallets();
-    const installed = wallets.filter(w => w.installed);
-    const notInstalled = wallets.filter(w => !w.installed);
 
     const overlay = document.createElement('div');
     overlay.id = 'wallet-picker-overlay';
@@ -378,40 +384,9 @@ function showWalletPicker() {
       <div class="wallet-picker-subtitle">
         Choose a Solana wallet to connect
       </div>
-      ${installed.length > 0 ? `
-        <div class="wallet-picker-section">
-          <div class="wallet-picker-section-title">Detected Wallets</div>
-          <div class="wallet-picker-list">
-            ${installed.map(w => `
-              <button class="wallet-picker-item installed" data-wallet-id="${w.id}" style="--wallet-color: ${w.color}">
-                <span class="wallet-picker-icon">${w.icon}</span>
-                <span class="wallet-picker-name">${w.name}</span>
-                <span class="wallet-picker-badge">Detected</span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      ` : `
-        <div class="wallet-picker-empty">
-          <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
-          <div>No Solana wallets detected</div>
-          <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">Install one of the wallets below</div>
-        </div>
-      `}
-      ${notInstalled.length > 0 ? `
-        <div class="wallet-picker-section">
-          <div class="wallet-picker-section-title">More Wallets</div>
-          <div class="wallet-picker-list">
-            ${notInstalled.map(w => `
-              <button class="wallet-picker-item not-installed" data-wallet-id="${w.id}" style="--wallet-color: ${w.color}">
-                <span class="wallet-picker-icon">${w.icon}</span>
-                <span class="wallet-picker-name">${w.name}</span>
-                <span class="wallet-picker-badge install">Install</span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      ` : ''}
+      <div id="wallet-picker-sections">
+        ${buildWalletPickerSections(wallets)}
+      </div>
       <div class="wallet-picker-footer">
         <span>🔒</span> Only connect to sites you trust
       </div>
@@ -426,6 +401,66 @@ function showWalletPicker() {
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) closeWalletPicker();
     });
+    bindWalletPickerItems(overlay);
+
+    // Some wallet extensions inject providers slightly late.
+    // Re-scan shortly after opening so detected list becomes consistent across OS/browser combos.
+    const rescanTimers = [500, 1300].map((delay) => setTimeout(() => {
+        refreshWalletPickerSections(overlay);
+    }, delay));
+    overlay._rescanTimers = rescanTimers;
+}
+
+function closeWalletPicker() {
+    const overlay = document.getElementById('wallet-picker-overlay');
+    if (overlay) {
+        if (Array.isArray(overlay._rescanTimers)) {
+            overlay._rescanTimers.forEach(clearTimeout);
+        }
+        overlay.classList.remove('active');
+        setTimeout(() => overlay.remove(), 300);
+    }
+}
+
+function buildWalletPickerSections(wallets) {
+    const installed = wallets.filter(w => w.installed);
+    const notInstalled = wallets.filter(w => !w.installed);
+
+    const renderWalletRow = (w, installedState) => `
+      <button class="wallet-picker-item ${installedState ? 'installed' : 'not-installed'}" data-wallet-id="${w.id}" style="--wallet-color-rgb: ${w.colorRgb || '153, 69, 255'};">
+        <span class="wallet-picker-icon" style="color:${w.color};">${w.icon}</span>
+        <span class="wallet-picker-name">${w.name}</span>
+        <span class="wallet-picker-badge ${installedState ? '' : 'install'}">${installedState ? 'Detected' : 'Install'}</span>
+      </button>
+    `;
+
+    return `
+      ${installed.length > 0 ? `
+        <div class="wallet-picker-section">
+          <div class="wallet-picker-section-title">Detected Wallets</div>
+          <div class="wallet-picker-list">
+            ${installed.map(w => renderWalletRow(w, true)).join('')}
+          </div>
+        </div>
+      ` : `
+        <div class="wallet-picker-empty">
+          <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+          <div>No Solana wallets detected</div>
+          <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 4px;">Install one of the wallets below</div>
+        </div>
+      `}
+      ${notInstalled.length > 0 ? `
+        <div class="wallet-picker-section">
+          <div class="wallet-picker-section-title">More Wallets</div>
+          <div class="wallet-picker-list">
+            ${notInstalled.map(w => renderWalletRow(w, false)).join('')}
+          </div>
+        </div>
+      ` : ''}
+    `;
+}
+
+function bindWalletPickerItems(overlay) {
     overlay.querySelectorAll('.wallet-picker-item').forEach(item => {
         item.addEventListener('click', () => {
             const walletId = item.getAttribute('data-wallet-id');
@@ -434,12 +469,11 @@ function showWalletPicker() {
     });
 }
 
-function closeWalletPicker() {
-    const overlay = document.getElementById('wallet-picker-overlay');
-    if (overlay) {
-        overlay.classList.remove('active');
-        setTimeout(() => overlay.remove(), 300);
-    }
+function refreshWalletPickerSections(overlay) {
+    const sectionRoot = overlay?.querySelector('#wallet-picker-sections');
+    if (!sectionRoot) return;
+    sectionRoot.innerHTML = buildWalletPickerSections(getAllWallets());
+    bindWalletPickerItems(overlay);
 }
 
 // ═══════════════════════════════════════════════
@@ -453,7 +487,7 @@ export function renderWalletButton(containerId) {
     container.innerHTML = `
     <div class="wallet-adapter" id="wallet-adapter">
       <button class="wallet-btn" id="wallet-connect-btn">
-        <span class="wallet-icon">🔗</span>
+        <span class="wallet-icon">WL</span>
         <span class="wallet-label">Connect Wallet</span>
       </button>
       <div class="wallet-info" id="wallet-info" style="display:none;">

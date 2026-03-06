@@ -1,19 +1,21 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Solqueue } from "../target/types/solqueue";
 import { assert } from "chai";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
+import BN from "bn.js";
 
 describe("solqueue", () => {
     // Configure the client to use the local cluster
     const provider = anchor.AnchorProvider.env();
     anchor.setProvider(provider);
 
-    const program = anchor.workspace.Solqueue as Program<Solqueue>;
+    // Avoid hard dependency on generated target/types for environments
+    // where IDL type generation is skipped or fails due toolchain mismatch.
+    const program = anchor.workspace.Solqueue as Program<any>;
     const authority = provider.wallet;
 
     // Test data
-    const QUEUE_NAME = "test-queue";
+    const QUEUE_NAME = `test-queue-${Date.now().toString().slice(-6)}`;
     const WORKER_ID = "worker-01";
     const JOB_PAYLOAD = Buffer.from(JSON.stringify({ action: "send_email", to: "user@solana.com" }));
     const JOB_RESULT = Buffer.from(JSON.stringify({ status: "sent", messageId: "msg-001" }));
@@ -59,9 +61,9 @@ describe("solqueue", () => {
                     5,            // max_workers
                     3,            // max_retries
                     1,            // default_priority (Medium)
-                    3600,         // job_ttl (1 hour)
+                    new BN(3600), // job_ttl (1 hour)
                 )
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     queueConfig: queuePda,
                     systemProgram: SystemProgram.programId,
@@ -110,9 +112,9 @@ describe("solqueue", () => {
                         5,
                         3,
                         1,
-                        0, // invalid TTL
+                        new BN(0), // invalid TTL
                     )
-                    .accounts({
+                    .accountsStrict({
                         authority: authority.publicKey,
                         queueConfig: badQueuePda,
                         systemProgram: SystemProgram.programId,
@@ -128,7 +130,7 @@ describe("solqueue", () => {
         it("Pauses the queue", async () => {
             const tx = await program.methods
                 .pauseQueue(true)
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     queueConfig: queuePda,
                 })
@@ -143,7 +145,7 @@ describe("solqueue", () => {
         it("Resumes the queue", async () => {
             const tx = await program.methods
                 .pauseQueue(false)
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     queueConfig: queuePda,
                 })
@@ -164,7 +166,7 @@ describe("solqueue", () => {
         it("Registers a worker", async () => {
             const tx = await program.methods
                 .registerWorker(WORKER_ID)
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -200,7 +202,7 @@ describe("solqueue", () => {
     describe("Job Lifecycle: Submit → Claim → Complete", () => {
         it("Submits a job", async () => {
             // Derive job PDA (job_id = 0 for the first job)
-            const jobId = new anchor.BN(0);
+            const jobId = new BN(0);
             [jobPda, jobBump] = PublicKey.findProgramAddressSync(
                 [
                     Buffer.from("job"),
@@ -212,7 +214,7 @@ describe("solqueue", () => {
 
             const tx = await program.methods
                 .submitJob(JOB_PAYLOAD, 2) // Priority: High
-                .accounts({
+                .accountsStrict({
                     creator: authority.publicKey,
                     queueConfig: queuePda,
                     jobAccount: jobPda,
@@ -246,7 +248,7 @@ describe("solqueue", () => {
         it("Claims the job (atomic operation)", async () => {
             const tx = await program.methods
                 .claimJob()
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -278,7 +280,7 @@ describe("solqueue", () => {
         it("Completes the job with result", async () => {
             const tx = await program.methods
                 .completeJob(JOB_RESULT)
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -319,7 +321,7 @@ describe("solqueue", () => {
         let failJobPda: PublicKey;
 
         it("Submits a second job (for failure testing)", async () => {
-            const jobId = new anchor.BN(1);
+            const jobId = new BN(1);
             [failJobPda] = PublicKey.findProgramAddressSync(
                 [
                     Buffer.from("job"),
@@ -331,7 +333,7 @@ describe("solqueue", () => {
 
             await program.methods
                 .submitJob(Buffer.from('{"task":"risky_operation"}'), 1) // Priority: Medium
-                .accounts({
+                .accountsStrict({
                     creator: authority.publicKey,
                     queueConfig: queuePda,
                     jobAccount: failJobPda,
@@ -346,7 +348,7 @@ describe("solqueue", () => {
             // Claim
             await program.methods
                 .claimJob()
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -357,7 +359,7 @@ describe("solqueue", () => {
             // Fail
             const tx = await program.methods
                 .failJob("Connection timeout: external API unreachable")
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -387,7 +389,7 @@ describe("solqueue", () => {
         it("Retries the failed job", async () => {
             const tx = await program.methods
                 .retryJob()
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     queueConfig: queuePda,
                     jobAccount: failJobPda,
@@ -416,7 +418,7 @@ describe("solqueue", () => {
             // Claim again
             await program.methods
                 .claimJob()
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -427,7 +429,7 @@ describe("solqueue", () => {
             // Complete this time
             const tx = await program.methods
                 .completeJob(Buffer.from('{"status":"success_on_retry"}'))
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -464,14 +466,14 @@ describe("solqueue", () => {
             // Pause the queue
             await program.methods
                 .pauseQueue(true)
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     queueConfig: queuePda,
                 })
                 .rpc();
 
             // Try to submit — should fail
-            const jobId = new anchor.BN(2);
+            const jobId = new BN(2);
             const [newJobPda] = PublicKey.findProgramAddressSync(
                 [
                     Buffer.from("job"),
@@ -484,7 +486,7 @@ describe("solqueue", () => {
             try {
                 await program.methods
                     .submitJob(Buffer.from('{"test":"should_fail"}'), 1)
-                    .accounts({
+                    .accountsStrict({
                         creator: authority.publicKey,
                         queueConfig: queuePda,
                         jobAccount: newJobPda,
@@ -500,7 +502,7 @@ describe("solqueue", () => {
             // Resume queue for subsequent tests
             await program.methods
                 .pauseQueue(false)
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     queueConfig: queuePda,
                 })
@@ -509,7 +511,7 @@ describe("solqueue", () => {
 
         it("Rejects claiming an already-processing job", async () => {
             // Submit and claim a job
-            const jobId = new anchor.BN(2);
+            const jobId = new BN(2);
             const [newJobPda] = PublicKey.findProgramAddressSync(
                 [
                     Buffer.from("job"),
@@ -521,7 +523,7 @@ describe("solqueue", () => {
 
             await program.methods
                 .submitJob(Buffer.from('{"test":"double_claim"}'), 1)
-                .accounts({
+                .accountsStrict({
                     creator: authority.publicKey,
                     queueConfig: queuePda,
                     jobAccount: newJobPda,
@@ -531,7 +533,7 @@ describe("solqueue", () => {
 
             await program.methods
                 .claimJob()
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -543,7 +545,7 @@ describe("solqueue", () => {
             try {
                 await program.methods
                     .claimJob()
-                    .accounts({
+                    .accountsStrict({
                         workerAuthority: authority.publicKey,
                         workerAccount: workerPda,
                         queueConfig: queuePda,
@@ -559,7 +561,7 @@ describe("solqueue", () => {
             // Clean up: complete the job
             await program.methods
                 .completeJob(Buffer.from("done"))
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -582,7 +584,7 @@ describe("solqueue", () => {
 
             await program.methods
                 .submitJob(Buffer.from('{"test":"deregister_blocked"}'), 1)
-                .accounts({
+                .accountsStrict({
                     creator: authority.publicKey,
                     queueConfig: queuePda,
                     jobAccount: processingJobPda,
@@ -592,7 +594,7 @@ describe("solqueue", () => {
 
             await program.methods
                 .claimJob()
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -603,7 +605,7 @@ describe("solqueue", () => {
             try {
                 await program.methods
                     .deregisterWorker()
-                    .accounts({
+                    .accountsStrict({
                         authority: authority.publicKey,
                         workerAccount: workerPda,
                         queueConfig: queuePda,
@@ -618,7 +620,7 @@ describe("solqueue", () => {
             // Clean up by finishing the processing job.
             await program.methods
                 .completeJob(Buffer.from("done-after-deregister-guard"))
-                .accounts({
+                .accountsStrict({
                     workerAuthority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
@@ -636,7 +638,7 @@ describe("solqueue", () => {
         it("Deregisters the worker", async () => {
             const tx = await program.methods
                 .deregisterWorker()
-                .accounts({
+                .accountsStrict({
                     authority: authority.publicKey,
                     workerAccount: workerPda,
                     queueConfig: queuePda,
