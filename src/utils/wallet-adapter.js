@@ -10,7 +10,7 @@ import {
     shortenAddress,
     DEVNET_RPC
 } from '../sdk/index.js';
-import { Connection } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
 
 // ═══════════════════════════════════════════════
 //  SUPPORTED WALLETS REGISTRY
@@ -133,6 +133,23 @@ function notifyListeners() {
     walletState.listeners.forEach(cb => cb({ ...walletState }));
 }
 
+function normalizePublicKey(candidate) {
+    if (!candidate) return null;
+
+    try {
+        if (candidate instanceof PublicKey) return candidate;
+        if (typeof candidate === 'string') return new PublicKey(candidate);
+        if (candidate?.toBase58) return new PublicKey(candidate.toBase58());
+        if (candidate?.toString && candidate.toString() !== '[object Object]') {
+            return new PublicKey(candidate.toString());
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+}
+
 // ═══════════════════════════════════════════════
 //  WALLET DETECTION
 // ═══════════════════════════════════════════════
@@ -197,14 +214,22 @@ export async function connectWallet(walletId) {
         }
 
         const response = await provider.connect();
-        // Different wallets return publicKey differently
-        const publicKey = response?.publicKey || provider.publicKey;
+        // Different wallets return publicKey in different shapes
+        const publicKey = normalizePublicKey(
+            response?.publicKey
+            || response?.account?.publicKey
+            || response?.address
+            || provider.publicKey
+        );
 
         if (!publicKey) {
             throw new Error('Wallet did not return a public key');
         }
 
         const connection = new Connection(DEVNET_RPC, 'confirmed');
+        if (!provider?.signTransaction) {
+            throw new Error(`${walletConfig.name} provider is missing signTransaction()`);
+        }
         const wallet = {
             publicKey,
             signTransaction: (tx) => provider.signTransaction(tx),
@@ -217,7 +242,7 @@ export async function connectWallet(walletId) {
 
         walletState = {
             connected: true,
-            publicKey: publicKey.toString(),
+            publicKey: publicKey.toBase58(),
             balance: balance / 1e9,
             client,
             walletName: walletConfig.name,
