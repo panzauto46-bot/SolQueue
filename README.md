@@ -323,14 +323,16 @@ anchor test
 | **Rust Toolchain** | `1.93.1` |
 | **Solana CLI** | `2.1.11 (Agave)` |
 | **Build Status** | ✅ Compiled successfully |
-| **Deploy Status** | ⏳ Awaiting devnet SOL airdrop |
+| **Deploy Status** | ✅ Deployed to Devnet (March 6, 2026) |
+| **Deploy Tx** | [View Deployment Transaction](https://solscan.io/tx/5JFf82paxM7QsggEpyTbhxZ6vH5JgHBopgsKDhj5T9pxRPXKGmoaWPWfdPb8aJ3qK2m8qR5b79wbYcJDT3eBQXkv?cluster=devnet) |
 | **Explorer** | [View on Solscan](https://solscan.io/account/GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64?cluster=devnet) |
 
 ### Transaction Links
-- `create_queue` — [View Transaction](#) *(pending deployment)*
-- `submit_job` — [View Transaction](#) *(pending deployment)*
-- `claim_job` — [View Transaction](#) *(pending deployment)*
-- `complete_job` — [View Transaction](#) *(pending deployment)*
+- `create_queue` — [View Transaction](https://solscan.io/tx/3b4DP3eUeZUrY9wDR4zcXEkin6JSTUEkFsEBDWTpuadg1hXso2BGz18qcHMznyAZFgWXCSqKZdcT3FiStrz5QcNT?cluster=devnet)
+- `register_worker` — [View Transaction](https://solscan.io/tx/arPQ9waDUT2iyASnJT2kXiSYWds4KFGgubKiPsYV7DZJ46jdW9YaSkkgmJ4rGAA59DGJyuKvn3jKnSPNDgfGCDq?cluster=devnet)
+- `submit_job` — [View Transaction](https://solscan.io/tx/3J2bgv51RrG81MA6avdLt3rJ1W2C6VYh8sBu9Pb4ZY5NNqrQZmfVHtVAmxEsiBx6Tx5m2eyNih2Nm5g6jchuu4GP?cluster=devnet)
+- `claim_job` — [View Transaction](https://solscan.io/tx/3nfpLmxZRRwA8x8uEYaLteqjztuYzN7LAkHbnMXCFHVKgAGSKm8gaedB1uJMxPM3MscEAeg35t722PCr5tcowjd7?cluster=devnet)
+- `complete_job` — [View Transaction](https://solscan.io/tx/5VLoYaZBzQEtmKU19H4KMeeUCqsTRcbpK2bNVVqT72kG68yFsrPHHuy9JyJ9NxDiYHmL46mRtz48WRT2K4E2Hjth?cluster=devnet)
 
 ---
 
@@ -370,7 +372,7 @@ anchor test
 - [x] Proper access control (authority checks)
 - [x] `anchor build` — Program compiled (ID: `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64`)
 - [x] Integration test suite written (TypeScript/Mocha)
-- [ ] Deploy to Devnet (awaiting SOL airdrop)
+- [x] Deploy to Devnet
 
 ### Phase 3: Integration & Client ✅
 - [x] TypeScript SDK (`src/sdk/index.js`) — SolQueueClient with 9 instruction methods

@@ -17,7 +17,7 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4
 
 > **Last Updated:** March 6, 2026  
 > **Program ID:** `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64`  
-> **Build:** ✅ Compiled | **Deploy:** ⏳ Awaiting devnet SOL  
+> **Build:** ✅ Compiled | **Deploy:** ✅ Deployed to Devnet  
 > **SDK:** ✅ Complete | **CLI:** ✅ Complete | **Wallet:** ✅ Integrated
 
 ---
@@ -73,7 +73,7 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4
 ## Phase 2: Solana Program (Rust/Anchor) ✅ COMPLETE
 
 **Duration:** ~5 days  
-**Status:** ✅ Code complete, built successfully. Awaiting devnet deploy.
+**Status:** ✅ Code complete, built, and deployed to devnet.
 
 ### Account Structures
 
@@ -165,7 +165,7 @@ pub struct WorkerAccount {
 - [x] Add account size calculations
 - [x] Add proper access control (authority checks)
 - [x] Build program: `anchor build`
-- [ ] Deploy to Devnet: `solana program deploy target/deploy/solqueue.so --program-id target/deploy/solqueue-keypair.json --url devnet`
+- [x] Deploy to Devnet: `solana program deploy target/deploy/solqueue.so --program-id target/deploy/solqueue-keypair.json --url devnet`
 - [x] Record Program ID and update Anchor.toml
 
 ---
