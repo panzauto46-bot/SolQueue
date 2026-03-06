@@ -387,6 +387,23 @@
     stroke-linejoin: round;
 }
 
+.ui-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    display: inline-block;
+    flex-shrink: 0;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.ui-icon-xs {
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
 .judge-strip {
     display: flex;
     align-items: center;
@@ -575,6 +592,11 @@
     transform: scale(1.08) translateY(-3px);
 }
 
+.pipeline-node-icon .ui-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
 .pipeline-node-icon.producer {
     background: rgba(153, 69, 255, 0.15);
     border: 1px solid rgba(153, 69, 255, 0.3);
@@ -701,6 +723,11 @@
     font-size: 1.5rem;
     margin-bottom: var(--space-lg);
     position: relative;
+}
+
+.feature-card .feature-icon .ui-icon {
+    width: 1.45rem;
+    height: 1.45rem;
 }
 
 .feature-card .feature-icon::after {
@@ -859,6 +886,11 @@
     font-size: 1.3rem;
 }
 
+.comparison-card .card-header .icon .ui-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
 .comparison-card.web2 .card-header .icon {
     background: rgba(255, 184, 0, 0.15);
 }
@@ -892,6 +924,12 @@
     margin-top: 3px;
     flex-shrink: 0;
     font-size: 0.9rem;
+}
+
+.comparison-item .item-icon .ui-icon {
+    width: 0.92rem;
+    height: 0.92rem;
+    opacity: 0.9;
 }
 
 .comparison-vs {
@@ -1001,6 +1039,12 @@
     transition: all var(--transition-normal);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+}
+
+.arch-account .ui-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    opacity: 0.92;
 }
 
 .arch-account:hover {

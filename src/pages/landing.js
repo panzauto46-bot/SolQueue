@@ -1,25 +1,44 @@
 import { FEATURES_DATA } from '../utils/mock-data.js';
 
-const ICON_BOLT = `
-<svg class="btn-inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-  <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"></path>
+const icon = (paths, className = 'ui-icon') => `
+<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+  ${paths}
 </svg>`;
 
-const ICON_ARCHITECTURE = `
-<svg class="btn-inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-  <rect x="3" y="3" width="7" height="7" rx="1.2"></rect>
-  <rect x="14" y="3" width="7" height="7" rx="1.2"></rect>
-  <rect x="3" y="14" width="7" height="7" rx="1.2"></rect>
-  <rect x="14" y="14" width="7" height="7" rx="1.2"></rect>
-</svg>`;
+const ICON_BOLT = icon('<path d="M13 2 4 14h6l-1 8 9-12h-6z"></path>');
+const ICON_BOLT_BTN = icon('<path d="M13 2 4 14h6l-1 8 9-12h-6z"></path>', 'btn-inline-icon');
+const ICON_ARCH_GRID = icon('<rect x="3" y="3" width="7" height="7" rx="1.2"></rect><rect x="14" y="3" width="7" height="7" rx="1.2"></rect><rect x="3" y="14" width="7" height="7" rx="1.2"></rect><rect x="14" y="14" width="7" height="7" rx="1.2"></rect>');
+const ICON_ARCHITECTURE = icon('<rect x="3" y="3" width="7" height="7" rx="1.2"></rect><rect x="14" y="3" width="7" height="7" rx="1.2"></rect><rect x="3" y="14" width="7" height="7" rx="1.2"></rect><rect x="14" y="14" width="7" height="7" rx="1.2"></rect>', 'btn-inline-icon');
+const ICON_DOC = icon('<path d="M7 3h8l4 4v14H7z"></path><path d="M15 3v4h4"></path><path d="M9 13h6"></path><path d="M9 17h6"></path>', 'btn-inline-icon');
 
-const ICON_DOC = `
-<svg class="btn-inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-  <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
-  <path d="M14 3v6h6"></path>
-  <path d="M9 13h6"></path>
-  <path d="M9 17h6"></path>
-</svg>`;
+const ICON_PIPE_PRODUCER = icon('<path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4 20-7z"></path>');
+const ICON_PIPE_QUEUE = icon('<rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path>');
+const ICON_PIPE_WORKER = icon('<circle cx="12" cy="8" r="3"></circle><path d="M5 20c1.8-3.1 4.1-4.5 7-4.5s5.2 1.4 7 4.5"></path>');
+const ICON_PIPE_RESULT = icon('<circle cx="12" cy="12" r="9"></circle><path d="m8.5 12.5 2.3 2.3 4.7-5.1"></path>');
+
+const ICON_LINK = icon('<path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path><path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>', 'ui-icon ui-icon-xs');
+const ICON_LOCK = icon('<rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path>', 'ui-icon ui-icon-xs');
+const ICON_CHART = icon('<path d="M4 20h16"></path><path d="M7 16v-5"></path><path d="M12 16V7"></path><path d="M17 16v-3"></path>', 'ui-icon ui-icon-xs');
+const ICON_CLOCK = icon('<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>', 'ui-icon ui-icon-xs');
+const ICON_GLOBE = icon('<circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3c2.5 2.5 2.5 15.5 0 18"></path><path d="M12 3c-2.5 2.5-2.5 15.5 0 18"></path>', 'ui-icon ui-icon-xs');
+const ICON_SERVER = icon('<rect x="3" y="4" width="18" height="6" rx="2"></rect><rect x="3" y="14" width="18" height="6" rx="2"></rect><path d="M7 7h.01M7 17h.01"></path>');
+const ICON_SOLANA = icon('<circle cx="12" cy="12" r="9"></circle><path d="M8 9h8M7.5 12h8M8 15h8"></path>');
+const ICON_TERMINAL = icon('<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m7 10 3 2-3 2"></path><path d="M13 15h4"></path>');
+const ICON_RADIO = icon('<circle cx="12" cy="12" r="2"></circle><path d="M16.2 7.8a6 6 0 0 1 0 8.4"></path><path d="M7.8 16.2a6 6 0 0 1 0-8.4"></path><path d="M19 5a10 10 0 0 1 0 14"></path><path d="M5 19A10 10 0 0 1 5 5"></path>');
+const ICON_BOX = icon('<path d="M3 8 12 3l9 5-9 5-9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path>', 'ui-icon ui-icon-xs');
+const ICON_FILE = icon('<path d="M7 3h8l4 4v14H7z"></path><path d="M15 3v4h4"></path>', 'ui-icon ui-icon-xs');
+const ICON_USER = icon('<circle cx="12" cy="8" r="3"></circle><path d="M5 20c1.8-3.1 4.1-4.5 7-4.5s5.2 1.4 7 4.5"></path>', 'ui-icon ui-icon-xs');
+const ICON_RETRY = icon('<path d="M21 4v6h-6"></path><path d="M3 20v-6h6"></path><path d="M20 10a8 8 0 0 0-14-3l-3 3"></path><path d="M4 14a8 8 0 0 0 14 3l3-3"></path>');
+const ICON_FAIL = icon('<circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6M15 9l-6 6"></path>', 'ui-icon ui-icon-xs');
+
+const FEATURE_ICON_MAP = {
+    'Job Submission': ICON_PIPE_PRODUCER,
+    'Priority Queue': ICON_BOLT,
+    'Retry & Backoff': ICON_RETRY,
+    'Worker Registry': ICON_PIPE_WORKER,
+    'Atomic Claims': ICON_LOCK,
+    'On-chain Analytics': ICON_CHART,
+};
 
 export function renderLandingPage() {
     return `
@@ -40,7 +59,7 @@ export function renderLandingPage() {
         </div>
         <div class="nav-actions">
           <a href="https://github.com/panzauto46-bot/SolQueue" target="_blank" class="btn btn-ghost btn-sm">
-            ⬡ GitHub
+            GitHub
           </a>
           <a href="#/dashboard" class="btn btn-primary btn-sm">
             Launch App →
@@ -69,7 +88,7 @@ export function renderLandingPage() {
         </p>
         <div class="hero-actions">
           <a href="#/dashboard" class="btn btn-primary btn-lg">
-            ${ICON_BOLT}<span>Launch App</span>
+            ${ICON_BOLT_BTN}<span>Launch App</span>
           </a>
           <a href="#architecture" class="btn btn-secondary btn-lg">
             ${ICON_ARCHITECTURE}<span>View Architecture</span>
@@ -122,7 +141,7 @@ export function renderLandingPage() {
     <!-- Pipeline / How it Works -->
     <section class="pipeline-section container" id="how-it-works">
       <div class="section-header">
-        <div class="section-label">⚙️ How It Works</div>
+        <div class="section-label">How It Works</div>
         <h2 class="heading-lg section-title">Job Pipeline <span class="text-gradient">Flow</span></h2>
         <p class="section-desc">
           From submission to completion, each transition is deterministic, atomic, and auditable on Devnet.
@@ -131,7 +150,7 @@ export function renderLandingPage() {
       <div class="pipeline-container">
         <div class="pipeline-flow">
           <div class="pipeline-node" data-animate="fadeInUp">
-            <div class="pipeline-node-icon producer">📤</div>
+            <div class="pipeline-node-icon producer">${ICON_PIPE_PRODUCER}</div>
             <div class="pipeline-node-label">Producer</div>
             <div class="pipeline-node-desc">Submits jobs with payload & priority</div>
           </div>
@@ -140,7 +159,7 @@ export function renderLandingPage() {
             <div class="arrow-head"></div>
           </div>
           <div class="pipeline-node" data-animate="fadeInUp">
-            <div class="pipeline-node-icon queue">📋</div>
+            <div class="pipeline-node-icon queue">${ICON_PIPE_QUEUE}</div>
             <div class="pipeline-node-label">Queue (PDA)</div>
             <div class="pipeline-node-desc">On-chain account stores job state</div>
           </div>
@@ -149,7 +168,7 @@ export function renderLandingPage() {
             <div class="arrow-head"></div>
           </div>
           <div class="pipeline-node" data-animate="fadeInUp">
-            <div class="pipeline-node-icon worker">👷</div>
+            <div class="pipeline-node-icon worker">${ICON_PIPE_WORKER}</div>
             <div class="pipeline-node-label">Worker</div>
             <div class="pipeline-node-desc">Claims & processes atomically</div>
           </div>
@@ -158,7 +177,7 @@ export function renderLandingPage() {
             <div class="arrow-head"></div>
           </div>
           <div class="pipeline-node" data-animate="fadeInUp">
-            <div class="pipeline-node-icon result">✅</div>
+            <div class="pipeline-node-icon result">${ICON_PIPE_RESULT}</div>
             <div class="pipeline-node-label">Result</div>
             <div class="pipeline-node-desc">Completed with result payload</div>
           </div>
@@ -169,7 +188,7 @@ export function renderLandingPage() {
     <!-- Features -->
     <section class="features-section container" id="features">
       <div class="section-header">
-        <div class="section-label">🧩 Features</div>
+        <div class="section-label">Features</div>
         <h2 class="heading-lg section-title">Everything a <span class="text-gradient">Queue Needs</span></h2>
         <p class="section-desc">
           Core backend queue capabilities translated into Solana-native account patterns.
@@ -179,7 +198,7 @@ export function renderLandingPage() {
         ${FEATURES_DATA.map((f, i) => `
           <div class="glass-card feature-card" data-animate="fadeInUp" style="animation-delay: ${i * 0.1}s">
             <div class="feature-icon" style="background: rgba(var(--feature-${f.color}-rgb, 153, 69, 255), 0.15)">
-              ${f.icon}
+              ${FEATURE_ICON_MAP[f.title] || ICON_ARCH_GRID}
             </div>
             <h3 class="feature-title">${f.title}</h3>
             <p class="feature-desc">${f.desc}</p>
@@ -192,7 +211,7 @@ export function renderLandingPage() {
     <!-- Web2 vs Solana Comparison -->
     <section class="comparison-section container" id="comparison">
       <div class="section-header">
-        <div class="section-label">🔀 Comparison</div>
+        <div class="section-label">Comparison</div>
         <h2 class="heading-lg section-title">Web2 <span class="text-gradient">vs</span> Solana</h2>
         <p class="section-desc">
           Side-by-side mapping of Web2 queue infrastructure to on-chain program design.
@@ -201,32 +220,32 @@ export function renderLandingPage() {
       <div class="comparison-grid">
         <div class="glass-card-static comparison-card web2">
           <div class="card-header">
-            <div class="icon">🖥️</div>
+            <div class="icon">${ICON_SERVER}</div>
             <div class="card-title">Traditional Backend</div>
           </div>
           <div class="comparison-list">
             <div class="comparison-item">
-              <span class="item-icon">📦</span>
+              <span class="item-icon">${ICON_BOX}</span>
               <span>Jobs stored in Redis/RabbitMQ in-memory</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">🔗</span>
+              <span class="item-icon">${ICON_LINK}</span>
               <span>Workers connect via TCP/AMQP protocol</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">🔒</span>
+              <span class="item-icon">${ICON_LOCK}</span>
               <span>Distributed locks prevent double-processing</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">📊</span>
+              <span class="item-icon">${ICON_CHART}</span>
               <span>Metrics via external monitoring (Prometheus)</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">⚡</span>
+              <span class="item-icon">${ICON_BOLT}</span>
               <span>Sub-millisecond latency, push model</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">🏗️</span>
+              <span class="item-icon">${ICON_ARCH_GRID}</span>
               <span>Requires infrastructure management</span>
             </div>
           </div>
@@ -236,32 +255,32 @@ export function renderLandingPage() {
         </div>
         <div class="glass-card-static comparison-card solana">
           <div class="card-header">
-            <div class="icon">◎</div>
+            <div class="icon">${ICON_SOLANA}</div>
             <div class="card-title">SolQueue (On-Chain)</div>
           </div>
           <div class="comparison-list">
             <div class="comparison-item">
-              <span class="item-icon">🔗</span>
+              <span class="item-icon">${ICON_LINK}</span>
               <span>Jobs are PDAs (Program Derived Addresses)</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">⚛️</span>
+              <span class="item-icon">${ICON_PIPE_WORKER}</span>
               <span>Workers claim via atomic transactions</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">🔐</span>
+              <span class="item-icon">${ICON_LOCK}</span>
               <span>No locks needed — Solana runtime atomicity</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">📊</span>
+              <span class="item-icon">${ICON_CHART}</span>
               <span>Metrics on-chain, fully transparent & auditable</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">⏱️</span>
+              <span class="item-icon">${ICON_CLOCK}</span>
               <span>~400ms confirmation, pull model</span>
             </div>
             <div class="comparison-item">
-              <span class="item-icon">🌐</span>
+              <span class="item-icon">${ICON_GLOBE}</span>
               <span>Serverless — no infrastructure to manage</span>
             </div>
           </div>
@@ -272,7 +291,7 @@ export function renderLandingPage() {
     <!-- Architecture -->
     <section class="architecture-section container" id="architecture">
       <div class="section-header">
-        <div class="section-label">📐 Architecture</div>
+        <div class="section-label">Architecture</div>
         <h2 class="heading-lg section-title">On-Chain <span class="text-gradient">Account Model</span></h2>
         <p class="section-desc">
           Queue state, permissions, and execution mapped into PDAs and instruction flows.
@@ -283,32 +302,32 @@ export function renderLandingPage() {
           <div class="arch-layer client">
             <span class="arch-layer-label">Client Layer</span>
             <div class="arch-accounts">
-              <div class="arch-account">🌐 Web Dashboard</div>
-              <div class="arch-account">⌨️ CLI Tool</div>
-              <div class="arch-account">📡 SDK (TypeScript)</div>
+              <div class="arch-account">${ICON_GLOBE}<span>Web Dashboard</span></div>
+              <div class="arch-account">${ICON_TERMINAL}<span>CLI Tool</span></div>
+              <div class="arch-account">${ICON_RADIO}<span>SDK (TypeScript)</span></div>
             </div>
           </div>
           <div class="arch-connector"><div class="connector-line"></div></div>
           <div class="arch-layer program">
             <span class="arch-layer-label">Solana Program (Rust/Anchor)</span>
             <div class="arch-accounts">
-              <div class="arch-account">📋 create_queue</div>
-              <div class="arch-account">📨 submit_job</div>
-              <div class="arch-account">🤚 claim_job</div>
-              <div class="arch-account">✅ complete_job</div>
-              <div class="arch-account">❌ fail_job</div>
-              <div class="arch-account">👷 register_worker</div>
-              <div class="arch-account">🔄 retry_job</div>
+              <div class="arch-account">${ICON_PIPE_QUEUE}<span>create_queue</span></div>
+              <div class="arch-account">${ICON_PIPE_PRODUCER}<span>submit_job</span></div>
+              <div class="arch-account">${ICON_LINK}<span>claim_job</span></div>
+              <div class="arch-account">${ICON_PIPE_RESULT}<span>complete_job</span></div>
+              <div class="arch-account">${ICON_FAIL}<span>fail_job</span></div>
+              <div class="arch-account">${ICON_PIPE_WORKER}<span>register_worker</span></div>
+              <div class="arch-account">${ICON_RETRY}<span>retry_job</span></div>
             </div>
           </div>
           <div class="arch-connector"><div class="connector-line"></div></div>
           <div class="arch-layer state">
             <span class="arch-layer-label">On-Chain State (PDAs)</span>
             <div class="arch-accounts">
-              <div class="arch-account">📦 QueueConfig</div>
-              <div class="arch-account">📄 JobAccount</div>
-              <div class="arch-account">👤 WorkerAccount</div>
-              <div class="arch-account">📊 QueueMetrics</div>
+              <div class="arch-account">${ICON_BOX}<span>QueueConfig</span></div>
+              <div class="arch-account">${ICON_FILE}<span>JobAccount</span></div>
+              <div class="arch-account">${ICON_USER}<span>WorkerAccount</span></div>
+              <div class="arch-account">${ICON_CHART}<span>QueueMetrics</span></div>
             </div>
           </div>
         </div>
@@ -323,7 +342,7 @@ export function renderLandingPage() {
           Open the app, create a queue, submit a job, and inspect each state transition on Solana Devnet.
         </p>
         <div class="cta-actions">
-          <a href="#/dashboard" class="btn btn-primary btn-lg">${ICON_BOLT}<span>Launch App</span></a>
+          <a href="#/dashboard" class="btn btn-primary btn-lg">${ICON_BOLT_BTN}<span>Launch App</span></a>
           <a href="https://github.com/panzauto46-bot/SolQueue#readme" target="_blank" class="btn btn-secondary btn-lg">${ICON_DOC}<span>Read Docs</span></a>
         </div>
       </div>
