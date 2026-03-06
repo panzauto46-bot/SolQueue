@@ -19,11 +19,37 @@
 
 <p align="center">
   <a href="#-live-demo">Live Demo</a> •
+  <a href="#-submission-checklist">Submission Checklist</a> •
   <a href="#-architecture">Architecture</a> •
   <a href="#-getting-started">Getting Started</a> •
   <a href="#-devnet-deployment">Devnet</a> •
   <a href="#-roadmap">Roadmap</a>
 </p>
+
+---
+
+## 🔗 Live Demo
+
+- **Web App (Vercel):** https://solqueue.vercel.app
+- **Public GitHub Repo:** https://github.com/panzauto46-bot/SolQueue
+- **Devnet Program:** [GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64](https://solscan.io/account/GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64?cluster=devnet)
+- **Devnet Deploy Tx:** [View on Solscan](https://solscan.io/tx/5JFf82paxM7QsggEpyTbhxZ6vH5JgHBopgsKDhj5T9pxRPXKGmoaWPWfdPb8aJ3qK2m8qR5b79wbYcJDT3eBQXkv?cluster=devnet)
+
+---
+
+## ✅ Submission Checklist
+
+| Mandatory Requirement | Status | Evidence |
+|-----------------------|--------|----------|
+| Rust program (Anchor or native SDK) | ✅ | `programs/solqueue/src` |
+| On-chain program deployed to Devnet | ✅ | Program ID + deploy tx in **Devnet Deployment** section |
+| Public GitHub repo | ✅ | https://github.com/panzauto46-bot/SolQueue |
+| Architecture explanation in README | ✅ | **Architecture**, **Web2 vs Solana**, **Tradeoffs & Constraints** |
+| Web2 flow explanation | ✅ | **Web2 → Solana Translation** section |
+| Solana flow explanation | ✅ | **Account Model** + instruction flow sections |
+| Tradeoffs and constraints | ✅ | **Tradeoffs & Constraints** section |
+| Devnet transaction links | ✅ | **Transaction Links** section |
+| Testable client (frontend or CLI) | ✅ | Vercel dashboard + `cli/index.js` |
 
 ---
 
@@ -193,7 +219,8 @@ SolQueue/
 ├── 📄 ROADMAP.md                   # Detailed development roadmap
 ├── 📁 scripts/                     # Utility scripts (tooling + deploy helpers)
 │   ├── install-tools.sh            # WSL/Linux toolchain setup helper
-│   └── deploy-devnet.ps1           # Windows helper for devnet deploy checks
+│   ├── deploy-devnet.ps1           # Windows helper for devnet deploy checks
+│   └── generate-devnet-demo-txs.mjs # Generate demo devnet tx signatures
 │
 ├── 🌐 Frontend (Web Dashboard)
 │   ├── index.html                  # Entry HTML with meta tags & fonts
@@ -238,9 +265,7 @@ SolQueue/
 │
 ├── 🔧 CLI Client — [Phase 3]
 │   └── cli/
-│       ├── src/
-│       │   └── main.rs             # CLI tool for interacting with SolQueue
-│       └── Cargo.toml
+│       └── index.js                # Node.js CLI tool for interacting with SolQueue
 │
 └── 📚 Documentation
     └── docs/
@@ -262,7 +287,7 @@ SolQueue/
 - [Node.js](https://nodejs.org/) v18+
 - [Rust](https://www.rust-lang.org/tools/install) v1.70+
 - [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools) v1.17+
-- [Anchor](https://www.anchor-lang.com/docs/installation) v0.29+
+- [Anchor](https://www.anchor-lang.com/docs/installation) v0.30.1
 
 ### 1. Clone & Install
 
@@ -389,7 +414,7 @@ anchor test
 - [x] API reference documentation
 - [ ] Demo video walkthrough
 - [ ] Performance benchmarks
-- [ ] Final README polish
+- [x] Final README polish
 
 ---
 
