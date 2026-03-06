@@ -284,15 +284,20 @@ Open [http://localhost:5173](http://localhost:5173) to view the dashboard.
 
 ```bash
 cd programs/solqueue
-anchor build
+anchor build --no-idl
 ```
+
+> `--no-idl` is used here to avoid known host-side IDL generation issues with newer Rust toolchains.
 
 ### 4. Deploy to Devnet
 
 ```bash
+cd ../..
 solana config set --url devnet
 solana airdrop 2
-anchor deploy
+solana program deploy target/deploy/solqueue.so \
+  --program-id target/deploy/solqueue-keypair.json \
+  --url devnet
 ```
 
 Windows helper (recommended in this repo):

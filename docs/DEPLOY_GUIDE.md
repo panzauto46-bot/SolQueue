@@ -24,15 +24,18 @@ solana balance --url devnet
 ```bash
 # Di Windows, set HOME dulu:
 $env:HOME = $env:USERPROFILE
-anchor build
+anchor build --no-idl
 
 # Atau via WSL:
-wsl -d Ubuntu -- bash -lc 'export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH" && cd /mnt/c/Users/PANZ\ AUTO/Documents/SolQueue && anchor build'
+wsl -d Ubuntu -- bash -lc 'export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH" && cd /mnt/c/Users/PANZ\ AUTO/Documents/SolQueue && anchor build --no-idl'
 ```
+> Gunakan `--no-idl` untuk menghindari issue kompatibilitas IDL host build pada kombinasi Rust/Anchor tertentu.
 
 ### Step 4: Deploy
 ```bash
-anchor deploy --provider.cluster devnet
+solana program deploy target/deploy/solqueue.so \
+  --program-id target/deploy/solqueue-keypair.json \
+  --url devnet
 ```
 
 ### Step 5: Update Program ID

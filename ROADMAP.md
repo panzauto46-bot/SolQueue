@@ -15,7 +15,7 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4
   ✅       ✅        ✅          ⏳
 ```
 
-> **Last Updated:** March 3, 2026  
+> **Last Updated:** March 6, 2026  
 > **Program ID:** `GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64`  
 > **Build:** ✅ Compiled | **Deploy:** ⏳ Awaiting devnet SOL  
 > **SDK:** ✅ Complete | **CLI:** ✅ Complete | **Wallet:** ✅ Integrated
@@ -165,7 +165,7 @@ pub struct WorkerAccount {
 - [x] Add account size calculations
 - [x] Add proper access control (authority checks)
 - [x] Build program: `anchor build`
-- [ ] Deploy to Devnet: `anchor deploy`
+- [ ] Deploy to Devnet: `solana program deploy target/deploy/solqueue.so --program-id target/deploy/solqueue-keypair.json --url devnet`
 - [x] Record Program ID and update Anchor.toml
 
 ---
@@ -205,7 +205,7 @@ pub struct WorkerAccount {
 
 ### Testing
 - [x] Integration tests for all instructions (tests/solqueue.ts)
-- [ ] Edge case tests (double-claim, expired jobs, max retries)
+- [x] Edge case tests (double-claim, expired jobs, max retries)
 - [ ] Load testing (multiple concurrent workers)
 - [ ] Error handling tests
 
