@@ -18,7 +18,7 @@ export function renderLandingPage() {
           </div>
         </div>
         <div class="nav-actions">
-          <a href="https://github.com" target="_blank" class="btn btn-ghost btn-sm">
+          <a href="https://github.com/panzauto46-bot/SolQueue" target="_blank" class="btn btn-ghost btn-sm">
             ⬡ GitHub
           </a>
           <a href="#/dashboard" class="btn btn-primary btn-sm">
@@ -42,17 +42,26 @@ export function renderLandingPage() {
           <span class="line"><span class="text-gradient highlight">Job Queue</span> System</span>
         </h1>
         <p class="hero-subtitle">
-          Rebuild traditional backend message queues as a Solana program. 
-          SolQueue brings Redis/RabbitMQ patterns on-chain with atomic job claiming, 
-          priority queues, and transparent processing — powered by Rust & Anchor.
+          Rebuilding the backend queue pattern as a Solana state machine.
+          SolQueue maps Web2 queue workflows into PDAs, atomic claims, retries,
+          and transparent on-chain metrics using Rust + Anchor.
         </p>
         <div class="hero-actions">
           <a href="#/dashboard" class="btn btn-primary btn-lg">
-            ⚡ Open Dashboard
+            ⚡ Launch App
           </a>
           <a href="#architecture" class="btn btn-secondary btn-lg">
             📐 View Architecture
           </a>
+        </div>
+        <div class="judge-strip">
+          <div class="judge-label">For Judges</div>
+          <div class="judge-links">
+            <a href="https://github.com/panzauto46-bot/SolQueue" target="_blank">GitHub Repo</a>
+            <a href="https://solscan.io/account/GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64?cluster=devnet" target="_blank">Devnet Program</a>
+            <a href="https://solscan.io/tx/5JFf82paxM7QsggEpyTbhxZ6vH5JgHBopgsKDhj5T9pxRPXKGmoaWPWfdPb8aJ3qK2m8qR5b79wbYcJDT3eBQXkv?cluster=devnet" target="_blank">Deploy Tx</a>
+            <a href="https://solscan.io/tx/3J2bgv51RrG81MA6avdLt3rJ1W2C6VYh8sBu9Pb4ZY5NNqrQZmfVHtVAmxEsiBx6Tx5m2eyNih2Nm5g6jchuu4GP?cluster=devnet" target="_blank">Core Flow Tx</a>
+          </div>
         </div>
         <div class="hero-stats">
           <div class="hero-stat">
@@ -95,7 +104,7 @@ export function renderLandingPage() {
         <div class="section-label">⚙️ How It Works</div>
         <h2 class="heading-lg section-title">Job Pipeline <span class="text-gradient">Flow</span></h2>
         <p class="section-desc">
-          From submission to completion — every step is on-chain, atomic, and transparent.
+          From submission to completion, each transition is deterministic, atomic, and auditable on Devnet.
         </p>
       </div>
       <div class="pipeline-container">
@@ -142,7 +151,7 @@ export function renderLandingPage() {
         <div class="section-label">🧩 Features</div>
         <h2 class="heading-lg section-title">Everything a <span class="text-gradient">Queue Needs</span></h2>
         <p class="section-desc">
-          Enterprise-grade job queue features, rebuilt for the Solana blockchain.
+          Core backend queue capabilities translated into Solana-native account patterns.
         </p>
       </div>
       <div class="features-grid">
@@ -165,7 +174,7 @@ export function renderLandingPage() {
         <div class="section-label">🔀 Comparison</div>
         <h2 class="heading-lg section-title">Web2 <span class="text-gradient">vs</span> Solana</h2>
         <p class="section-desc">
-          How traditional backend patterns translate to on-chain architecture.
+          Side-by-side mapping of Web2 queue infrastructure to on-chain program design.
         </p>
       </div>
       <div class="comparison-grid">
@@ -245,7 +254,7 @@ export function renderLandingPage() {
         <div class="section-label">📐 Architecture</div>
         <h2 class="heading-lg section-title">On-Chain <span class="text-gradient">Account Model</span></h2>
         <p class="section-desc">
-          How SolQueue maps traditional queue concepts to Solana's account architecture.
+          Queue state, permissions, and execution mapped into PDAs and instruction flows.
         </p>
       </div>
       <div class="glass-card-static arch-diagram">
@@ -290,11 +299,11 @@ export function renderLandingPage() {
       <div class="cta-card">
         <h2 class="heading-lg cta-title">Ready to <span class="text-gradient">Queue On-Chain</span>?</h2>
         <p class="cta-desc">
-          Explore the dashboard, create queues, submit jobs, and watch them process in real-time on Solana Devnet.
+          Open the app, create a queue, submit a job, and inspect each state transition on Solana Devnet.
         </p>
         <div class="cta-actions">
-          <a href="#/dashboard" class="btn btn-primary btn-lg">⚡ Launch Dashboard</a>
-          <a href="https://github.com" target="_blank" class="btn btn-secondary btn-lg">📖 Read Docs</a>
+          <a href="#/dashboard" class="btn btn-primary btn-lg">⚡ Launch App</a>
+          <a href="https://github.com/panzauto46-bot/SolQueue#readme" target="_blank" class="btn btn-secondary btn-lg">📖 Read Docs</a>
         </div>
       </div>
     </section>
@@ -303,10 +312,10 @@ export function renderLandingPage() {
     <footer class="landing-footer">
       <div class="footer-inner">
         <div class="footer-text">
-          © 2024 SolQueue — Built for Superteam Poland Hackathon
+          © 2026 SolQueue — Built for Superteam Poland Hackathon
         </div>
         <div class="footer-links">
-          <a href="https://github.com" target="_blank">GitHub</a>
+          <a href="https://github.com/panzauto46-bot/SolQueue" target="_blank">GitHub</a>
           <a href="https://solana.com" target="_blank">Solana</a>
           <a href="https://anchor-lang.com" target="_blank">Anchor</a>
         </div>
