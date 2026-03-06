@@ -1,5 +1,26 @@
 import { FEATURES_DATA } from '../utils/mock-data.js';
 
+const ICON_BOLT = `
+<svg class="btn-inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="currentColor"></path>
+</svg>`;
+
+const ICON_ARCHITECTURE = `
+<svg class="btn-inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <rect x="3" y="3" width="7" height="7" rx="1.2"></rect>
+  <rect x="14" y="3" width="7" height="7" rx="1.2"></rect>
+  <rect x="3" y="14" width="7" height="7" rx="1.2"></rect>
+  <rect x="14" y="14" width="7" height="7" rx="1.2"></rect>
+</svg>`;
+
+const ICON_DOC = `
+<svg class="btn-inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
+  <path d="M14 3v6h6"></path>
+  <path d="M9 13h6"></path>
+  <path d="M9 17h6"></path>
+</svg>`;
+
 export function renderLandingPage() {
     return `
     <!-- Navigation -->
@@ -48,10 +69,10 @@ export function renderLandingPage() {
         </p>
         <div class="hero-actions">
           <a href="#/dashboard" class="btn btn-primary btn-lg">
-            ⚡ Launch App
+            ${ICON_BOLT}<span>Launch App</span>
           </a>
           <a href="#architecture" class="btn btn-secondary btn-lg">
-            📐 View Architecture
+            ${ICON_ARCHITECTURE}<span>View Architecture</span>
           </a>
         </div>
         <div class="judge-strip">
@@ -302,8 +323,8 @@ export function renderLandingPage() {
           Open the app, create a queue, submit a job, and inspect each state transition on Solana Devnet.
         </p>
         <div class="cta-actions">
-          <a href="#/dashboard" class="btn btn-primary btn-lg">⚡ Launch App</a>
-          <a href="https://github.com/panzauto46-bot/SolQueue#readme" target="_blank" class="btn btn-secondary btn-lg">📖 Read Docs</a>
+          <a href="#/dashboard" class="btn btn-primary btn-lg">${ICON_BOLT}<span>Launch App</span></a>
+          <a href="https://github.com/panzauto46-bot/SolQueue#readme" target="_blank" class="btn btn-secondary btn-lg">${ICON_DOC}<span>Read Docs</span></a>
         </div>
       </div>
     </section>

@@ -376,6 +376,17 @@
     min-width: 220px;
 }
 
+.btn-inline-icon {
+    width: 1.05em;
+    height: 1.05em;
+    flex-shrink: 0;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .judge-strip {
     display: flex;
     align-items: center;
