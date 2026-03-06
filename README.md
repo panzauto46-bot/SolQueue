@@ -87,6 +87,7 @@ By bringing this pattern **on-chain**, we demonstrate that Solana can serve as a
 | ⏱️ **Job TTL & Expiry** | Expired jobs can be reclaimed or cleaned up automatically |
 | 🔀 **Demo ↔ Live Data Mode** | Hybrid UX: demo dataset by default, one-click switch to live on-chain data when wallet is connected |
 | ✅ **Form Validation & Feedback** | Create Queue / Submit Job forms include strict validation, mode-aware hints, and transaction feedback |
+| 🏁 **Judge Quick Test Panel** | Dashboard includes a 60-second verification flow with direct Devnet tx links for fast review |
 | 🔍 **State Machine** | Complete job lifecycle: `Pending → Processing → Completed/Failed` |
 | 🌐 **Web Dashboard** | Professional real-time dashboard with 3D animations and live monitoring |
 

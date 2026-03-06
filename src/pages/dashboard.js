@@ -8,6 +8,14 @@ let pipelineAnim = null;
 let barChartAnim = null;
 let lineChartAnim = null;
 let dataUpdateUnsubscribe = null;
+const DEVNET_PROGRAM_ID = 'GHrFSFPtew8KtV8SCYSDd4GEp5BeGGSuVXXumZ2Ptm64';
+const QUICK_TX_LINKS = {
+  createQueue: 'https://solscan.io/tx/3b4DP3eUeZUrY9wDR4zcXEkin6JSTUEkFsEBDWTpuadg1hXso2BGz18qcHMznyAZFgWXCSqKZdcT3FiStrz5QcNT?cluster=devnet',
+  registerWorker: 'https://solscan.io/tx/arPQ9waDUT2iyASnJT2kXiSYWds4KFGgubKiPsYV7DZJ46jdW9YaSkkgmJ4rGAA59DGJyuKvn3jKnSPNDgfGCDq?cluster=devnet',
+  submitJob: 'https://solscan.io/tx/3J2bgv51RrG81MA6avdLt3rJ1W2C6VYh8sBu9Pb4ZY5NNqrQZmfVHtVAmxEsiBx6Tx5m2eyNih2Nm5g6jchuu4GP?cluster=devnet',
+  claimJob: 'https://solscan.io/tx/3nfpLmxZRRwA8x8uEYaLteqjztuYzN7LAkHbnMXCFHVKgAGSKm8gaedB1uJMxPM3MscEAeg35t722PCr5tcowjd7?cluster=devnet',
+  completeJob: 'https://solscan.io/tx/5VLoYaZBzQEtmKU19H4KMeeUCqsTRcbpK2bNVVqT72kG68yFsrPHHuy9JyJ9NxDiYHmL46mRtz48WRT2K4E2Hjth?cluster=devnet',
+};
 
 function formatSyncTime(timestamp) {
   if (!timestamp) return 'not synced yet';
@@ -258,6 +266,9 @@ function renderDataStatusStrip() {
       <div class="data-status-strip live">
         <div class="data-status-title">● LIVE ON-CHAIN</div>
         <div class="data-status-text">${syncStatus}</div>
+        <div class="data-status-actions">
+          <button class="btn btn-ghost btn-sm" id="switch-to-demo-btn">Switch to Demo</button>
+        </div>
       </div>
     `;
   }
@@ -268,6 +279,41 @@ function renderDataStatusStrip() {
       <div class="data-status-text">
         Using curated sample data for walkthrough.
         ${ws.connected ? 'Wallet connected — click LIVE DATA to switch to on-chain.' : 'Connect wallet to enable live on-chain mode.'}
+      </div>
+    </div>
+  `;
+}
+
+function renderJudgeQuickPanel() {
+  const snapshot = getDashboardDataSnapshot();
+  const liveHint = snapshot.mode === 'live'
+    ? 'You are currently in LIVE mode. Submit one transaction to produce fresh proof.'
+    : 'You are in DEMO mode. Connect wallet and toggle LIVE DATA to show real on-chain state.';
+
+  return `
+    <div class="glass-card-static judge-quick-panel">
+      <div class="judge-quick-head">
+        <div>
+          <div class="judge-quick-title">🏁 Judge Quick Test (60s)</div>
+          <div class="judge-quick-subtitle">${liveHint}</div>
+        </div>
+        <a class="btn btn-secondary btn-sm" href="https://solscan.io/account/${DEVNET_PROGRAM_ID}?cluster=devnet" target="_blank" rel="noopener noreferrer">View Program</a>
+      </div>
+
+      <div class="judge-steps">
+        <div class="judge-step"><span>1</span>Connect wallet from top-right button.</div>
+        <div class="judge-step"><span>2</span>Toggle <strong>LIVE DATA</strong> from header or Settings.</div>
+        <div class="judge-step"><span>3</span>Create queue in <a href="#/dashboard/create-queue">Create Queue</a>.</div>
+        <div class="judge-step"><span>4</span>Submit job in <a href="#/dashboard/submit-job">Submit Job</a>.</div>
+        <div class="judge-step"><span>5</span>Observe status transition in Jobs and Analytics.</div>
+      </div>
+
+      <div class="judge-links">
+        <a href="${QUICK_TX_LINKS.createQueue}" target="_blank" rel="noopener noreferrer">create_queue tx</a>
+        <a href="${QUICK_TX_LINKS.registerWorker}" target="_blank" rel="noopener noreferrer">register_worker tx</a>
+        <a href="${QUICK_TX_LINKS.submitJob}" target="_blank" rel="noopener noreferrer">submit_job tx</a>
+        <a href="${QUICK_TX_LINKS.claimJob}" target="_blank" rel="noopener noreferrer">claim_job tx</a>
+        <a href="${QUICK_TX_LINKS.completeJob}" target="_blank" rel="noopener noreferrer">complete_job tx</a>
       </div>
     </div>
   `;
@@ -294,6 +340,8 @@ function renderOverview() {
   const activities = snapshot.activities;
 
   return `
+    ${renderJudgeQuickPanel()}
+
     <!-- Stats -->
     <div class="stats-grid">
       <div class="glass-card stat-card purple" data-animate="fadeInUp">
@@ -446,7 +494,11 @@ function renderQueues() {
         <div class="empty-state">
           <div class="empty-icon">📭</div>
           <div class="empty-title">No Queues Found</div>
-          <div class="empty-desc">Create your first queue to start processing jobs on-chain.</div>
+          <div class="empty-desc">
+            ${snapshot.mode === 'live'
+      ? 'No queue accounts found for this wallet/program yet. Create one on-chain or switch to demo mode for guided preview.'
+      : 'Create your first demo queue to simulate an end-to-end processing flow.'}
+          </div>
           <a href="#/dashboard/create-queue" class="btn btn-primary btn-sm">➕ Create Queue</a>
         </div>
       `}
@@ -513,7 +565,11 @@ function renderJobs() {
             </tr>
           `).join('') : `
             <tr>
-              <td colspan="8" class="table-empty">No jobs available yet for this mode.</td>
+              <td colspan="8" class="table-empty">
+                ${snapshot.mode === 'live'
+      ? 'No on-chain jobs detected yet. Submit one from Submit Job, then refresh.'
+      : 'No demo jobs yet. Use Submit Job to generate pipeline activity instantly.'}
+              </td>
             </tr>
           `}
         </tbody>
@@ -580,7 +636,11 @@ function renderWorkers() {
         <div class="empty-state">
           <div class="empty-icon">👷</div>
           <div class="empty-title">No Workers Registered</div>
-          <div class="empty-desc">Register workers to start claiming and processing jobs.</div>
+          <div class="empty-desc">
+            ${snapshot.mode === 'live'
+      ? 'No on-chain workers found. Register a worker account to claim jobs.'
+      : 'Demo mode can run without explicit workers, but registering workers improves realism.'}
+          </div>
         </div>
       `}
     </div>
@@ -1025,6 +1085,15 @@ export function initDashboard(page) {
   if (dataModeToggleBtn) {
     dataModeToggleBtn.addEventListener('click', async () => {
       await toggleDataModeWithFeedback();
+    });
+  }
+
+  const switchToDemoBtn = document.getElementById('switch-to-demo-btn');
+  if (switchToDemoBtn) {
+    switchToDemoBtn.addEventListener('click', () => {
+      setDataMode('mock');
+      showToast('Switched to demo dataset mode', 'info');
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
   }
 

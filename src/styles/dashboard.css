@@ -377,6 +377,12 @@
     border: 1px solid transparent;
 }
 
+.data-status-actions {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+}
+
 .data-status-strip.live {
     background: linear-gradient(130deg, rgba(20, 241, 149, 0.12), rgba(0, 212, 170, 0.04));
     border-color: rgba(20, 241, 149, 0.25);
@@ -1173,6 +1179,87 @@
     font-size: 0.85rem;
 }
 
+.judge-quick-panel {
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    border-color: rgba(153, 69, 255, 0.28);
+    background: linear-gradient(140deg, rgba(28, 16, 52, 0.64), rgba(10, 10, 28, 0.5));
+}
+
+.judge-quick-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: var(--space-md);
+}
+
+.judge-quick-title {
+    font-family: var(--font-heading);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.judge-quick-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+.judge-steps {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+    margin-bottom: var(--space-md);
+}
+
+.judge-step {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.judge-step span {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--sol-purple-light);
+    border: 1px solid rgba(153, 69, 255, 0.4);
+    background: rgba(153, 69, 255, 0.12);
+    flex-shrink: 0;
+}
+
+.judge-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.judge-links a {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    padding: 6px 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.03);
+    transition: all var(--transition-fast);
+}
+
+.judge-links a:hover {
+    color: var(--sol-green);
+    border-color: rgba(20, 241, 149, 0.4);
+    background: rgba(20, 241, 149, 0.08);
+}
+
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1181,6 +1268,10 @@
 
 @media (max-width: 600px) {
     .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .judge-steps {
         grid-template-columns: 1fr;
     }
 }
