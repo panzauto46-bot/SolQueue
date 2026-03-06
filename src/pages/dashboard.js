@@ -46,7 +46,23 @@ const ICONS = {
   save: svgIcon('<path d="M5 3h12l2 2v16H5z"></path><path d="M8 3v5h8V3"></path><path d="M8 14h8"></path>'),
   link: svgIcon('<path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path><path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>'),
   inbox: svgIcon('<path d="M3 6h18v12H3z"></path><path d="M3 13h5l2 3h4l2-3h5"></path>'),
+  sidebarCollapse: svgIcon('<rect x="3" y="4" width="6" height="16" rx="1.5"></rect><path d="M21 4h-8M21 10h-8M21 16h-8"></path><path d="m14 12 3-3"></path><path d="m14 12 3 3"></path>'),
+  sidebarExpand: svgIcon('<rect x="3" y="4" width="6" height="16" rx="1.5"></rect><path d="M21 4h-8M21 10h-8M21 16h-8"></path><path d="m17 12-3-3"></path><path d="m17 12-3 3"></path>'),
 };
+
+function getSidebarCollapsedPreference() {
+  try {
+    return localStorage.getItem('solqueue_sidebar_collapsed') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function setSidebarCollapsedPreference(collapsed) {
+  try {
+    localStorage.setItem('solqueue_sidebar_collapsed', collapsed ? '1' : '0');
+  } catch { }
+}
 
 function formatSyncTime(timestamp) {
   if (!timestamp) return 'not synced yet';
@@ -132,8 +148,9 @@ function getDashboardDataSnapshot() {
 }
 
 export function renderDashboard(activePage = 'overview') {
+  const collapsedClass = getSidebarCollapsedPreference() ? 'sidebar-collapsed' : '';
   return `
-    <div class="app-layout">
+    <div class="app-layout ${collapsedClass}">
       ${renderSidebar(activePage)}
       <div class="main-content">
         ${renderTopHeader(activePage)}
@@ -169,7 +186,7 @@ function renderSidebar(activePage) {
       <div class="sidebar-header">
         <a href="#/" class="sidebar-logo">
           <div class="logo-dot">◈</div>
-          <span class="text-gradient">Sol</span>Queue
+          <span class="sidebar-logo-text"><span class="text-gradient">Sol</span>Queue</span>
         </a>
       </div>
       <nav class="sidebar-nav">
@@ -226,6 +243,7 @@ function renderSidebar(activePage) {
 function renderTopHeader(activePage) {
   const snapshot = getDashboardDataSnapshot();
   const ws = getWalletState();
+  const sidebarCollapsed = getSidebarCollapsedPreference();
   const walletLabel = ws.connected
     ? `${ws.publicKey.slice(0, 4)}...${ws.publicKey.slice(-4)}`
     : 'Connect Wallet';
@@ -247,6 +265,14 @@ function renderTopHeader(activePage) {
     <header class="top-header">
       <div class="header-left">
         <button class="mobile-menu-btn btn-icon" id="mobile-menu-toggle">${ICONS.menu}</button>
+        <button
+          class="sidebar-toggle-btn btn btn-icon btn-ghost"
+          id="sidebar-collapse-toggle"
+          title="${sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}"
+          aria-label="${sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}"
+        >
+          ${sidebarCollapsed ? ICONS.sidebarExpand : ICONS.sidebarCollapse}
+        </button>
         <div>
           <h1 class="header-title">${titles[activePage] || 'Dashboard'}</h1>
           <div class="header-breadcrumb">
@@ -1062,16 +1088,38 @@ export function initDashboard(page) {
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     item.addEventListener('click', () => {
       const nextPage = item.getAttribute('data-page');
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        document.getElementById('sidebar')?.classList.remove('open');
+      }
       window.location.hash = `/dashboard/${nextPage}`;
     });
   });
 
   // Mobile menu toggle
   const mobileToggle = document.getElementById('mobile-menu-toggle');
+  const collapseToggle = document.getElementById('sidebar-collapse-toggle');
   const sidebar = document.getElementById('sidebar');
+  const appLayout = document.querySelector('.app-layout');
   if (mobileToggle && sidebar) {
     mobileToggle.addEventListener('click', () => {
       sidebar.classList.toggle('open');
+    });
+  }
+
+  if (collapseToggle && appLayout && sidebar) {
+    collapseToggle.addEventListener('click', () => {
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        sidebar.classList.toggle('open');
+        return;
+      }
+
+      appLayout.classList.toggle('sidebar-collapsed');
+      const collapsed = appLayout.classList.contains('sidebar-collapsed');
+      setSidebarCollapsedPreference(collapsed);
+
+      collapseToggle.innerHTML = collapsed ? ICONS.sidebarExpand : ICONS.sidebarCollapse;
+      collapseToggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+      collapseToggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
     });
   }
 

@@ -6,6 +6,7 @@
 .app-layout {
     display: flex;
     min-height: 100vh;
+    --sidebar-collapsed-width: 82px;
 }
 
 /* ---- Sidebar ---- */
@@ -21,7 +22,7 @@
     display: flex;
     flex-direction: column;
     z-index: 50;
-    transition: transform var(--transition-normal);
+    transition: transform var(--transition-normal), width var(--transition-normal);
     box-shadow: 14px 0 40px rgba(0, 0, 0, 0.28);
     overflow: hidden;
 }
@@ -96,6 +97,10 @@
     cursor: pointer;
     margin-bottom: 2px;
     border: 1px solid transparent;
+}
+
+.sidebar-logo .sidebar-logo-text {
+    white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -181,6 +186,74 @@
     transform: translateY(-1px);
 }
 
+.sidebar-toggle-btn {
+    display: inline-flex;
+}
+
+.sidebar-toggle-btn .dash-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.app-layout.sidebar-collapsed .sidebar-header {
+    padding: var(--space-md);
+}
+
+.app-layout.sidebar-collapsed .sidebar-logo {
+    justify-content: center;
+}
+
+.app-layout.sidebar-collapsed .sidebar-logo .sidebar-logo-text {
+    display: none;
+}
+
+.app-layout.sidebar-collapsed .nav-section-title {
+    display: none;
+}
+
+.app-layout.sidebar-collapsed .sidebar-nav {
+    padding: var(--space-sm);
+}
+
+.app-layout.sidebar-collapsed .nav-item {
+    justify-content: center;
+    gap: 0;
+    padding: 10px;
+}
+
+.app-layout.sidebar-collapsed .nav-item:hover {
+    transform: none;
+}
+
+.app-layout.sidebar-collapsed .nav-item > span:not(.nav-icon):not(.nav-badge) {
+    display: none;
+}
+
+.app-layout.sidebar-collapsed .nav-item .nav-badge {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    min-width: 8px;
+    height: 8px;
+    padding: 0;
+    font-size: 0;
+    line-height: 0;
+}
+
+.app-layout.sidebar-collapsed .sidebar-footer {
+    padding: var(--space-sm);
+}
+
+.app-layout.sidebar-collapsed .sidebar-wallet {
+    justify-content: center;
+    padding: 10px 8px;
+}
+
+.app-layout.sidebar-collapsed .sidebar-wallet .wallet-info,
+.app-layout.sidebar-collapsed .sidebar-wallet .wallet-status {
+    display: none;
+}
+
 .wallet-avatar {
     width: 32px;
     height: 32px;
@@ -224,6 +297,15 @@
     flex: 1;
     margin-left: var(--sidebar-width);
     min-height: 100vh;
+    transition: margin-left var(--transition-normal);
+}
+
+.app-layout.sidebar-collapsed .sidebar {
+    width: var(--sidebar-collapsed-width);
+}
+
+.app-layout.sidebar-collapsed .main-content {
+    margin-left: var(--sidebar-collapsed-width);
 }
 
 /* ---- Top Header ---- */
@@ -890,6 +972,10 @@
 }
 
 @media (max-width: 768px) {
+    .sidebar-toggle-btn {
+        display: none;
+    }
+
     .sidebar {
         transform: translateX(-100%);
     }
@@ -898,7 +984,60 @@
         transform: translateX(0);
     }
 
+    .app-layout.sidebar-collapsed .sidebar {
+        width: var(--sidebar-width);
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-logo .sidebar-logo-text {
+        display: inline;
+    }
+
+    .app-layout.sidebar-collapsed .nav-section-title {
+        display: block;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-nav {
+        padding: var(--space-md);
+    }
+
+    .app-layout.sidebar-collapsed .nav-item {
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 10px var(--space-md);
+    }
+
+    .app-layout.sidebar-collapsed .nav-item > span:not(.nav-icon):not(.nav-badge) {
+        display: inline;
+    }
+
+    .app-layout.sidebar-collapsed .nav-item .nav-badge {
+        position: static;
+        min-width: auto;
+        height: auto;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        line-height: normal;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-footer {
+        padding: var(--space-md);
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-wallet {
+        justify-content: flex-start;
+        padding: 10px;
+    }
+
+    .app-layout.sidebar-collapsed .sidebar-wallet .wallet-info,
+    .app-layout.sidebar-collapsed .sidebar-wallet .wallet-status {
+        display: block;
+    }
+
     .main-content {
+        margin-left: 0;
+    }
+
+    .app-layout.sidebar-collapsed .main-content {
         margin-left: 0;
     }
 
