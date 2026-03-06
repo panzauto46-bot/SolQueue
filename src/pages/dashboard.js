@@ -46,8 +46,6 @@ const ICONS = {
   save: svgIcon('<path d="M5 3h12l2 2v16H5z"></path><path d="M8 3v5h8V3"></path><path d="M8 14h8"></path>'),
   link: svgIcon('<path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path><path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>'),
   inbox: svgIcon('<path d="M3 6h18v12H3z"></path><path d="M3 13h5l2 3h4l2-3h5"></path>'),
-  sidebarCollapse: svgIcon('<rect x="3" y="4" width="6" height="16" rx="1.5"></rect><path d="M21 4h-8M21 10h-8M21 16h-8"></path><path d="m14 12 3-3"></path><path d="m14 12 3 3"></path>'),
-  sidebarExpand: svgIcon('<rect x="3" y="4" width="6" height="16" rx="1.5"></rect><path d="M21 4h-8M21 10h-8M21 16h-8"></path><path d="m17 12-3-3"></path><path d="m17 12-3 3"></path>'),
 };
 
 function getSidebarCollapsedPreference() {
@@ -271,7 +269,7 @@ function renderTopHeader(activePage) {
           title="${sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}"
           aria-label="${sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}"
         >
-          ${sidebarCollapsed ? ICONS.sidebarExpand : ICONS.sidebarCollapse}
+          ${ICONS.menu}
         </button>
         <div>
           <h1 class="header-title">${titles[activePage] || 'Dashboard'}</h1>
@@ -1116,8 +1114,6 @@ export function initDashboard(page) {
       appLayout.classList.toggle('sidebar-collapsed');
       const collapsed = appLayout.classList.contains('sidebar-collapsed');
       setSidebarCollapsedPreference(collapsed);
-
-      collapseToggle.innerHTML = collapsed ? ICONS.sidebarExpand : ICONS.sidebarCollapse;
       collapseToggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
       collapseToggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
     });
