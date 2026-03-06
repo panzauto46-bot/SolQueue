@@ -234,6 +234,9 @@ export async function connectWallet(walletId) {
             publicKey,
             signTransaction: (tx) => provider.signTransaction(tx),
             signAllTransactions: (txs) => provider.signAllTransactions?.(txs) || Promise.all(txs.map(t => provider.signTransaction(t))),
+            signAndSendTransaction: provider.signAndSendTransaction
+                ? (tx, options) => provider.signAndSendTransaction(tx, options)
+                : undefined,
         };
 
         const client = new SolQueueClient(connection, wallet);
@@ -595,6 +598,15 @@ export function showToast(message, type = 'info', duration = 4000) {
     return toast;
 }
 
+function friendlyTxErrorMessage(error) {
+    const raw = error?.message || '';
+    if (raw.includes('User rejected')) return 'Transaction cancelled by user';
+    if (/serialize is not a function/i.test(raw)) {
+        return 'Wallet signing failed on this tx format. Retry once, or use Phantom/Solflare for Live mode.';
+    }
+    return raw || 'Transaction failed';
+}
+
 export async function sendWithFeedback(txFn, actionName) {
     const loadingToast = showToast(`${actionName}...`, 'loading', 0);
 
@@ -616,11 +628,11 @@ export async function sendWithFeedback(txFn, actionName) {
         loadingToast.classList.remove('toast-visible');
         setTimeout(() => loadingToast.remove(), 300);
 
-        const msg = error.message?.includes('User rejected')
-            ? 'Transaction cancelled by user'
-            : error.message || 'Transaction failed';
-
+        const msg = friendlyTxErrorMessage(error);
         showToast(msg, 'error', 5000);
+        if (error && typeof error === 'object') {
+            error.__toastShown = true;
+        }
         throw error;
     }
 }

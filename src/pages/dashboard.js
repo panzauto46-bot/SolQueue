@@ -1330,7 +1330,9 @@ function wireCreateQueueForm() {
 
       window.location.hash = '/dashboard/queues';
     } catch (error) {
-      showToast(error?.message || 'Failed to create queue', 'error');
+      if (!error?.__toastShown) {
+        showToast(error?.message || 'Failed to create queue', 'error');
+      }
     } finally {
       createBtn.disabled = false;
       createBtn.textContent = 'Create Queue';
@@ -1414,7 +1416,9 @@ function wireSubmitJobForm() {
 
       window.location.hash = '/dashboard/jobs';
     } catch (error) {
-      showToast(error?.message || 'Failed to submit job', 'error');
+      if (!error?.__toastShown) {
+        showToast(error?.message || 'Failed to submit job', 'error');
+      }
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Job';

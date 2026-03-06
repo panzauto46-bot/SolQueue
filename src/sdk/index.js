@@ -142,6 +142,47 @@ export class SolQueueClient {
     }
   }
 
+  async _rpcWithFallback(methodBuilder) {
+    try {
+      return await methodBuilder.rpc();
+    } catch (error) {
+      const raw = error?.message || '';
+      const txSerializeIssue = /serialize is not a function/i.test(raw);
+
+      if (!txSerializeIssue || !this.wallet?.signAndSendTransaction) {
+        throw error;
+      }
+
+      const tx = await methodBuilder.transaction();
+      const latest = await this.connection.getLatestBlockhash('confirmed');
+      tx.recentBlockhash = latest.blockhash;
+      tx.feePayer = this.wallet.publicKey;
+
+      const response = await this.wallet.signAndSendTransaction(tx, {
+        preflightCommitment: 'confirmed',
+      });
+
+      const signature = typeof response === 'string'
+        ? response
+        : response?.signature || response?.txid;
+
+      if (!signature) {
+        throw error;
+      }
+
+      await this.connection.confirmTransaction(
+        {
+          signature,
+          blockhash: latest.blockhash,
+          lastValidBlockHeight: latest.lastValidBlockHeight,
+        },
+        'confirmed'
+      );
+
+      return signature;
+    }
+  }
+
   // ─── Queue Instructions ──────────────────────
 
   /**
@@ -159,14 +200,15 @@ export class SolQueueClient {
     const authority = this.wallet.publicKey;
     const queuePDA = getQueuePDA(authority, name);
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .createQueue(name, maxWorkers, maxRetries, defaultPriority, new BN(jobTtl))
       .accounts({
         authority,
         queueConfig: queuePDA,
         systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return { tx, queuePDA };
   }
@@ -180,13 +222,14 @@ export class SolQueueClient {
   async pauseQueue(queuePDA, paused) {
     if (!this.program) throw new Error('Wallet not connected');
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .pauseQueue(paused)
       .accounts({
         authority: this.wallet.publicKey,
         queueConfig: queuePDA,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return tx;
   }
@@ -211,15 +254,16 @@ export class SolQueueClient {
       ? new TextEncoder().encode(payload) 
       : payload;
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .submitJob(Buffer.from(payloadBytes), priority)
       .accounts({
         creator: this.wallet.publicKey,
         queueConfig: queuePDA,
         jobAccount: jobPDA,
         systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return { tx, jobPDA, jobId };
   }
@@ -235,15 +279,16 @@ export class SolQueueClient {
 
     const workerPDA = getWorkerPDA(queuePDA, this.wallet.publicKey);
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .claimJob()
       .accounts({
         workerAuthority: this.wallet.publicKey,
         workerAccount: workerPDA,
         queueConfig: queuePDA,
         jobAccount: jobPDA,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return tx;
   }
@@ -263,15 +308,16 @@ export class SolQueueClient {
       ? new TextEncoder().encode(result)
       : result;
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .completeJob(Buffer.from(resultBytes))
       .accounts({
         workerAuthority: this.wallet.publicKey,
         workerAccount: workerPDA,
         queueConfig: queuePDA,
         jobAccount: jobPDA,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return tx;
   }
@@ -288,15 +334,16 @@ export class SolQueueClient {
 
     const workerPDA = getWorkerPDA(queuePDA, this.wallet.publicKey);
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .failJob(errorMessage)
       .accounts({
         workerAuthority: this.wallet.publicKey,
         workerAccount: workerPDA,
         queueConfig: queuePDA,
         jobAccount: jobPDA,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return tx;
   }
@@ -310,14 +357,15 @@ export class SolQueueClient {
   async retryJob(queuePDA, jobPDA) {
     if (!this.program) throw new Error('Wallet not connected');
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .retryJob()
       .accounts({
         authority: this.wallet.publicKey,
         queueConfig: queuePDA,
         jobAccount: jobPDA,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return tx;
   }
@@ -335,15 +383,16 @@ export class SolQueueClient {
 
     const workerPDA = getWorkerPDA(queuePDA, this.wallet.publicKey);
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .registerWorker(workerId)
       .accounts({
         authority: this.wallet.publicKey,
         workerAccount: workerPDA,
         queueConfig: queuePDA,
         systemProgram: SystemProgram.programId,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return { tx, workerPDA };
   }
@@ -358,14 +407,15 @@ export class SolQueueClient {
 
     const workerPDA = getWorkerPDA(queuePDA, this.wallet.publicKey);
 
-    const tx = await this.program.methods
+    const method = this.program.methods
       .deregisterWorker()
       .accounts({
         authority: this.wallet.publicKey,
         workerAccount: workerPDA,
         queueConfig: queuePDA,
-      })
-      .rpc();
+      });
+
+    const tx = await this._rpcWithFallback(method);
 
     return tx;
   }
