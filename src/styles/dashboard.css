@@ -130,6 +130,24 @@
     font-size: 1rem;
 }
 
+.dash-icon {
+    width: 1rem;
+    height: 1rem;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.nav-icon .dash-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
 .nav-item .nav-badge {
     margin-left: auto;
     padding: 2px 8px;
@@ -280,6 +298,11 @@
 .header-search .search-icon {
     color: var(--text-muted);
     font-size: 0.9rem;
+}
+
+.header-search .search-icon .dash-icon {
+    width: 0.9rem;
+    height: 0.9rem;
 }
 
 .header-search input {
@@ -459,6 +482,9 @@
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
 }
 
 .pipeline-canvas-wrapper {
@@ -831,6 +857,9 @@
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
 }
 
 .chart-canvas {
@@ -853,6 +882,11 @@
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border-secondary);
+}
+
+.mobile-menu-btn .dash-icon {
+    width: 1rem;
+    height: 1rem;
 }
 
 @media (max-width: 768px) {
@@ -947,6 +981,11 @@
     font-size: 3rem;
     margin-bottom: var(--space-lg);
     opacity: 0.3;
+}
+
+.empty-state .empty-icon .dash-icon {
+    width: 2.4rem;
+    height: 2.4rem;
 }
 
 .empty-state .empty-title {

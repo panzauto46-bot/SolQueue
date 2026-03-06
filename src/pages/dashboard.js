@@ -17,6 +17,37 @@ const QUICK_TX_LINKS = {
   completeJob: 'https://solscan.io/tx/5VLoYaZBzQEtmKU19H4KMeeUCqsTRcbpK2bNVVqT72kG68yFsrPHHuy9JyJ9NxDiYHmL46mRtz48WRT2K4E2Hjth?cluster=devnet',
 };
 
+const svgIcon = (paths, cls = 'dash-icon') => `
+<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+  ${paths}
+</svg>`;
+
+const ICONS = {
+  dashboard: svgIcon('<path d="M4 4h6v8H4z"></path><path d="M14 4h6v5h-6z"></path><path d="M14 11h6v9h-6z"></path><path d="M4 14h6v6H4z"></path>'),
+  queues: svgIcon('<rect x="5" y="5" width="14" height="14" rx="2"></rect><path d="M8 9h8M8 13h8M8 17h5"></path>'),
+  jobs: svgIcon('<path d="M7 3h8l4 4v14H7z"></path><path d="M15 3v4h4"></path><path d="M9 13h6"></path><path d="M9 17h6"></path>'),
+  workers: svgIcon('<circle cx="9" cy="9" r="3"></circle><circle cx="16.5" cy="9.5" r="2.5"></circle><path d="M3 20c1.8-3.2 3.9-4.7 6-4.7s4.2 1.5 6 4.7"></path><path d="M13.5 20c.9-2 2.1-3 3.9-3s3 1 3.9 3"></path>'),
+  analytics: svgIcon('<path d="M4 20h16"></path><path d="M7 16v-5"></path><path d="M12 16V8"></path><path d="M17 16v-3"></path><path d="m6 10 4-4 3 2 5-5"></path>'),
+  plus: svgIcon('<path d="M12 5v14M5 12h14"></path>'),
+  send: svgIcon('<path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4 20-7z"></path>'),
+  settings: svgIcon('<path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"></path><circle cx="12" cy="12" r="3.2"></circle>'),
+  menu: svgIcon('<path d="M4 7h16M4 12h16M4 17h16"></path>'),
+  search: svgIcon('<circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.2-3.2"></path>'),
+  bell: svgIcon('<path d="M6 8a6 6 0 0 1 12 0v6l2 2H4l2-2z"></path><path d="M10 19a2 2 0 0 0 4 0"></path>'),
+  flag: svgIcon('<path d="M6 3v18"></path><path d="M6 4h11l-2 4 2 4H6"></path>'),
+  file: svgIcon('<path d="M7 3h8l4 4v14H7z"></path><path d="M15 3v4h4"></path>'),
+  check: svgIcon('<circle cx="12" cy="12" r="9"></circle><path d="m8.5 12.5 2.3 2.3 4.7-5.1"></path>'),
+  bolt: svgIcon('<path d="M13 2 4 14h6l-1 8 9-12h-6z"></path>'),
+  users: svgIcon('<circle cx="12" cy="8" r="3"></circle><path d="M5 20c1.8-3.1 4.1-4.5 7-4.5s5.2 1.4 7 4.5"></path>'),
+  chart: svgIcon('<path d="M4 20h16"></path><path d="M7 16v-5"></path><path d="M12 16V7"></path><path d="M17 16v-3"></path>'),
+  trend: svgIcon('<path d="M4 19h16"></path><path d="m5 14 4-4 3 2 6-6"></path><path d="m15 6h3v3"></path>'),
+  timer: svgIcon('<circle cx="12" cy="13" r="8"></circle><path d="M12 13V9"></path><path d="M12 2v3"></path><path d="M9 2h6"></path>'),
+  retry: svgIcon('<path d="M21 4v6h-6"></path><path d="M3 20v-6h6"></path><path d="M20 10a8 8 0 0 0-14-3l-3 3"></path><path d="M4 14a8 8 0 0 0 14 3l3-3"></path>'),
+  save: svgIcon('<path d="M5 3h12l2 2v16H5z"></path><path d="M8 3v5h8V3"></path><path d="M8 14h8"></path>'),
+  link: svgIcon('<path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path><path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>'),
+  inbox: svgIcon('<path d="M3 6h18v12H3z"></path><path d="M3 13h5l2 3h4l2-3h5"></path>'),
+};
+
 function formatSyncTime(timestamp) {
   if (!timestamp) return 'not synced yet';
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -120,17 +151,17 @@ function renderSidebar(activePage) {
   const snapshot = getDashboardDataSnapshot();
 
   const navItems = [
-    { id: 'overview', icon: '📊', label: 'Dashboard', badge: null },
-    { id: 'queues', icon: '📋', label: 'Queues', badge: snapshot.queues.length },
-    { id: 'jobs', icon: '📄', label: 'Jobs', badge: snapshot.stats.pendingJobs || 0 },
-    { id: 'workers', icon: '👷', label: 'Workers', badge: snapshot.stats.onlineWorkers || 0 },
-    { id: 'analytics', icon: '📈', label: 'Analytics', badge: null },
+    { id: 'overview', icon: ICONS.dashboard, label: 'Dashboard', badge: null },
+    { id: 'queues', icon: ICONS.queues, label: 'Queues', badge: snapshot.queues.length },
+    { id: 'jobs', icon: ICONS.jobs, label: 'Jobs', badge: snapshot.stats.pendingJobs || 0 },
+    { id: 'workers', icon: ICONS.workers, label: 'Workers', badge: snapshot.stats.onlineWorkers || 0 },
+    { id: 'analytics', icon: ICONS.analytics, label: 'Analytics', badge: null },
   ];
 
   const toolItems = [
-    { id: 'create-queue', icon: '➕', label: 'Create Queue', badge: null },
-    { id: 'submit-job', icon: '📨', label: 'Submit Job', badge: null },
-    { id: 'settings', icon: '⚙️', label: 'Settings', badge: null },
+    { id: 'create-queue', icon: ICONS.plus, label: 'Create Queue', badge: null },
+    { id: 'submit-job', icon: ICONS.send, label: 'Submit Job', badge: null },
+    { id: 'settings', icon: ICONS.settings, label: 'Settings', badge: null },
   ];
 
   return `
@@ -215,7 +246,7 @@ function renderTopHeader(activePage) {
   return `
     <header class="top-header">
       <div class="header-left">
-        <button class="mobile-menu-btn btn-icon" id="mobile-menu-toggle">☰</button>
+        <button class="mobile-menu-btn btn-icon" id="mobile-menu-toggle">${ICONS.menu}</button>
         <div>
           <h1 class="header-title">${titles[activePage] || 'Dashboard'}</h1>
           <div class="header-breadcrumb">
@@ -230,7 +261,7 @@ function renderTopHeader(activePage) {
       </div>
       <div class="header-right">
         <div class="header-search">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon">${ICONS.search}</span>
           <input type="text" placeholder="Search jobs, queues..." id="global-search">
         </div>
         <div class="network-badge devnet">
@@ -245,7 +276,7 @@ function renderTopHeader(activePage) {
           <span>${walletLabel}</span>
         </button>
         <button class="btn btn-icon btn-ghost notification-btn" id="notifications-btn">
-          🔔
+          ${ICONS.bell}
           <span class="notif-dot"></span>
         </button>
       </div>
@@ -294,7 +325,7 @@ function renderJudgeQuickPanel() {
     <div class="glass-card-static judge-quick-panel">
       <div class="judge-quick-head">
         <div>
-          <div class="judge-quick-title">🏁 Judge Quick Test (60s)</div>
+          <div class="judge-quick-title">${ICONS.flag} Judge Quick Test (60s)</div>
           <div class="judge-quick-subtitle">${liveHint}</div>
         </div>
         <a class="btn btn-secondary btn-sm" href="https://solscan.io/account/${DEVNET_PROGRAM_ID}?cluster=devnet" target="_blank" rel="noopener noreferrer">View Program</a>
@@ -345,25 +376,25 @@ function renderOverview() {
     <!-- Stats -->
     <div class="stats-grid">
       <div class="glass-card stat-card purple" data-animate="fadeInUp">
-        <div class="stat-icon">📄</div>
+        <div class="stat-icon">${ICONS.file}</div>
         <div class="stat-label">Total Jobs</div>
         <div class="stat-value" data-count-up="${stats.totalJobs || 0}">0</div>
         <div class="stat-change positive">↑ 12.5% vs last week</div>
       </div>
       <div class="glass-card stat-card green" data-animate="fadeInUp">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon">${ICONS.check}</div>
         <div class="stat-label">Success Rate</div>
         <div class="stat-value" data-count-up="${Number(stats.successRate || 0)}" data-suffix="%">0</div>
         <div class="stat-change positive">↑ 1.2% vs last week</div>
       </div>
       <div class="glass-card stat-card cyan" data-animate="fadeInUp">
-        <div class="stat-icon">⚡</div>
+        <div class="stat-icon">${ICONS.bolt}</div>
         <div class="stat-label">Throughput</div>
         <div class="stat-value">${stats.throughput || '0/hr'}</div>
         <div class="stat-change positive">↑ 8.3% vs last week</div>
       </div>
       <div class="glass-card stat-card blue" data-animate="fadeInUp">
-        <div class="stat-icon">👷</div>
+        <div class="stat-icon">${ICONS.users}</div>
         <div class="stat-label">Online Workers</div>
         <div class="stat-value" data-count-up="${stats.onlineWorkers || 0}">0</div>
         <div class="stat-change positive">↑ 2 new this week</div>
@@ -373,7 +404,7 @@ function renderOverview() {
     <!-- Pipeline Visualization -->
     <div class="glass-card-static pipeline-viz">
       <div class="viz-header">
-        <div class="viz-title">⚡ ${snapshot.mode === 'live' ? 'Live' : 'Demo'} Pipeline</div>
+        <div class="viz-title">${ICONS.bolt} ${snapshot.mode === 'live' ? 'Live' : 'Demo'} Pipeline</div>
         <div class="badge ${snapshot.mode === 'live' ? 'badge-success' : 'badge-info'}"><span class="pulse-dot"></span> ${snapshot.mode === 'live' ? 'Live' : 'Demo'}</div>
       </div>
       <div class="pipeline-canvas-wrapper">
@@ -455,7 +486,7 @@ function renderQueues() {
         <h3 class="heading-sm">All Queues</h3>
         <span class="badge badge-info">${queues.length} queues</span>
       </div>
-      <a href="#/dashboard/create-queue" class="btn btn-primary btn-sm">➕ Create Queue</a>
+      <a href="#/dashboard/create-queue" class="btn btn-primary btn-sm">${ICONS.plus}<span>Create Queue</span></a>
     </div>
     <div class="queues-grid">
       ${queues.length > 0 ? queues.map(queue => `
@@ -492,14 +523,14 @@ function renderQueues() {
         </div>
       `).join('') : `
         <div class="empty-state">
-          <div class="empty-icon">📭</div>
+          <div class="empty-icon">${ICONS.inbox}</div>
           <div class="empty-title">No Queues Found</div>
           <div class="empty-desc">
             ${snapshot.mode === 'live'
       ? 'No queue accounts found for this wallet/program yet. Create one on-chain or switch to demo mode for guided preview.'
       : 'Create your first demo queue to simulate an end-to-end processing flow.'}
           </div>
-          <a href="#/dashboard/create-queue" class="btn btn-primary btn-sm">➕ Create Queue</a>
+          <a href="#/dashboard/create-queue" class="btn btn-primary btn-sm">${ICONS.plus}<span>Create Queue</span></a>
         </div>
       `}
     </div>
@@ -524,7 +555,7 @@ function renderJobs() {
           <button class="filter-chip" data-filter="completed">Completed</button>
           <button class="filter-chip" data-filter="failed">Failed</button>
         </div>
-        <a href="#/dashboard/submit-job" class="btn btn-primary btn-sm">📨 Submit Job</a>
+        <a href="#/dashboard/submit-job" class="btn btn-primary btn-sm">${ICONS.send}<span>Submit Job</span></a>
       </div>
     </div>
 
@@ -589,7 +620,7 @@ function renderWorkers() {
         <h3 class="heading-sm">Worker Registry</h3>
         <span class="badge badge-success"><span class="pulse-dot"></span> ${online} Online</span>
       </div>
-      <button class="btn btn-primary btn-sm">👷 Register Worker</button>
+      <button class="btn btn-primary btn-sm">${ICONS.workers}<span>Register Worker</span></button>
     </div>
     <div class="workers-grid">
       ${workers.length > 0 ? workers.map(worker => `
@@ -634,7 +665,7 @@ function renderWorkers() {
         </div>
       `).join('') : `
         <div class="empty-state">
-          <div class="empty-icon">👷</div>
+          <div class="empty-icon">${ICONS.workers}</div>
           <div class="empty-title">No Workers Registered</div>
           <div class="empty-desc">
             ${snapshot.mode === 'live'
@@ -664,7 +695,7 @@ function renderAnalytics() {
       <!-- Throughput Chart -->
       <div class="glass-card-static chart-card">
         <div class="chart-header">
-          <div class="chart-title">📊 Weekly Throughput</div>
+          <div class="chart-title">${ICONS.chart} Weekly Throughput</div>
           <select class="select-field" style="min-width: 120px;">
             <option>This Week</option>
             <option>Last Week</option>
@@ -679,7 +710,7 @@ function renderAnalytics() {
       <!-- Success Distribution -->
       <div class="glass-card-static chart-card">
         <div class="chart-header">
-          <div class="chart-title">🎯 Job Status</div>
+          <div class="chart-title">${ICONS.analytics} Job Status</div>
         </div>
         <div class="donut-chart" id="donut-chart">
           <svg viewBox="0 0 200 200">
@@ -730,7 +761,7 @@ function renderAnalytics() {
     <!-- Line Chart -->
     <div class="glass-card-static chart-card" style="margin-bottom: var(--space-lg);">
       <div class="chart-header">
-        <div class="chart-title">📈 24h Job Completion Trend</div>
+        <div class="chart-title">${ICONS.trend} 24h Job Completion Trend</div>
         <div class="flex items-center gap-md">
           <div class="legend-item" style="margin: 0;">
             <div class="legend-dot" style="background: var(--sol-green);"></div>
@@ -750,19 +781,19 @@ function renderAnalytics() {
     <!-- Performance Metrics -->
     <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
       <div class="glass-card stat-card cyan">
-        <div class="stat-icon">⏱️</div>
+        <div class="stat-icon">${ICONS.timer}</div>
         <div class="stat-label">Avg Processing Time</div>
         <div class="stat-value">${stats.avgProcessingTime || 'N/A'}</div>
         <div class="stat-change positive">↓ 0.3s faster</div>
       </div>
       <div class="glass-card stat-card purple">
-        <div class="stat-icon">🔄</div>
+        <div class="stat-icon">${ICONS.retry}</div>
         <div class="stat-label">Retry Rate</div>
         <div class="stat-value">2.7%</div>
         <div class="stat-change positive">↓ 0.5% improvement</div>
       </div>
       <div class="glass-card stat-card green">
-        <div class="stat-icon">📊</div>
+        <div class="stat-icon">${ICONS.chart}</div>
         <div class="stat-label">Queue Utilization</div>
         <div class="stat-value">${Math.min(100, Math.max(0, Math.round(((stats.pendingJobs || 0) + (stats.failedJobs || 0)) > 0 ? 100 - (failed || 0) : 78)))}%</div>
         <div class="stat-change positive">↑ 5% vs last week</div>
@@ -826,7 +857,7 @@ function renderCreateQueue() {
         </div>
         <div class="form-actions">
           <button class="btn btn-primary" id="create-queue-btn">
-            ➕ Create Queue
+            ${ICONS.plus}<span>Create Queue</span>
           </button>
           <a href="#/dashboard" class="btn btn-secondary">Cancel</a>
         </div>
@@ -865,9 +896,9 @@ function renderSubmitJob() {
         <div class="form-group">
           <label>Priority</label>
           <select class="select-field" id="job-priority">
-            <option value="high">🔴 High</option>
-            <option value="medium" selected>🟡 Medium</option>
-            <option value="low">🟢 Low</option>
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
           </select>
         </div>
         <div class="form-group">
@@ -877,7 +908,7 @@ function renderSubmitJob() {
         </div>
         <div class="form-actions">
           <button class="btn btn-primary" id="submit-job-btn" ${queues.length === 0 ? 'disabled' : ''}>
-            📨 Submit Job
+            ${ICONS.send}<span>Submit Job</span>
           </button>
           <a href="#/dashboard/jobs" class="btn btn-secondary">Cancel</a>
         </div>
@@ -951,7 +982,7 @@ function renderSettings() {
           </label>
         </div>
         <div class="form-actions">
-          <button class="btn btn-primary" id="save-settings-btn">💾 Save Settings</button>
+          <button class="btn btn-primary" id="save-settings-btn">${ICONS.save}<span>Save Settings</span></button>
         </div>
       </div>
     </div>
@@ -970,8 +1001,8 @@ function renderModal() {
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost btn-sm" id="close-modal-2">Close</button>
-          <button class="btn btn-secondary btn-sm">🔄 Retry Job</button>
-          <a href="#" class="btn btn-primary btn-sm" target="_blank">🔗 View on Explorer</a>
+          <button class="btn btn-secondary btn-sm">${ICONS.retry}<span>Retry Job</span></button>
+          <a href="#" class="btn btn-primary btn-sm" target="_blank">${ICONS.link}<span>View on Explorer</span></a>
         </div>
       </div>
     </div>
@@ -1003,9 +1034,9 @@ function getStatusBadge(status) {
 
 function getPriorityBadge(priority) {
   const badges = {
-    high: '<span style="color: var(--color-error); font-size: 0.8rem; font-weight: 600;">🔴 High</span>',
-    medium: '<span style="color: var(--color-warning); font-size: 0.8rem; font-weight: 600;">🟡 Medium</span>',
-    low: '<span style="color: var(--sol-green); font-size: 0.8rem; font-weight: 600;">🟢 Low</span>',
+    high: '<span style="color: var(--color-error); font-size: 0.8rem; font-weight: 600; display:inline-flex; align-items:center; gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-error);display:inline-block;"></span>High</span>',
+    medium: '<span style="color: var(--color-warning); font-size: 0.8rem; font-weight: 600; display:inline-flex; align-items:center; gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--color-warning);display:inline-block;"></span>Medium</span>',
+    low: '<span style="color: var(--sol-green); font-size: 0.8rem; font-weight: 600; display:inline-flex; align-items:center; gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--sol-green);display:inline-block;"></span>Low</span>',
   };
   return badges[priority] || escapeHtml(priority);
 }
@@ -1302,7 +1333,7 @@ function wireCreateQueueForm() {
       showToast(error?.message || 'Failed to create queue', 'error');
     } finally {
       createBtn.disabled = false;
-      createBtn.textContent = '➕ Create Queue';
+      createBtn.textContent = 'Create Queue';
     }
   });
 }
@@ -1386,7 +1417,7 @@ function wireSubmitJobForm() {
       showToast(error?.message || 'Failed to submit job', 'error');
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = '📨 Submit Job';
+      submitBtn.textContent = 'Submit Job';
     }
   });
 }
