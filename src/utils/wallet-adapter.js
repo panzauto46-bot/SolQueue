@@ -384,6 +384,9 @@ function showWalletPicker() {
       <div class="wallet-picker-subtitle">
         Choose a Solana wallet to connect
       </div>
+      <div class="wallet-picker-note">
+        Detected wallets depend on extensions installed in this browser profile (Windows/Linux may differ).
+      </div>
       <div id="wallet-picker-sections">
         ${buildWalletPickerSections(wallets)}
       </div>

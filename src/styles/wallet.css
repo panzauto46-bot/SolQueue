@@ -353,6 +353,18 @@
   color: #888;
 }
 
+.wallet-picker-note {
+  margin: 0 24px 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(20, 241, 149, 0.16);
+  background: rgba(20, 241, 149, 0.06);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #9fdcc7;
+}
+
 .wallet-picker-section {
   padding: 0 16px 16px;
 }

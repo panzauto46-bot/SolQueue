@@ -448,6 +448,11 @@ anchor test --skip-build -- --grep "create_queue"
 anchor test --skip-build -- --verbose
 ```
 
+### Wallet Detection Notes (Windows/Linux)
+- The wallet picker shows **Detected Wallets** based on extensions installed in the current browser profile.
+- Because extension sets often differ between Windows and Linux, detected wallet lists can be different across OS.
+- This is expected behavior, not a SolQueue backend error.
+
 ---
 
 ## 🎯 Judging Criteria Alignment
