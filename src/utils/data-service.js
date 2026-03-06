@@ -145,7 +145,7 @@ async function fetchLiveData() {
                 processing: q.processingJobs,
                 completed: q.completedJobs,
                 failed: q.failedJobs,
-                workers: q.activeWorkers || q.maxWorkers,
+                workers: q.workerCount ?? q.activeWorkers ?? 0,
                 maxRetries: q.maxRetries,
                 priority: q.defaultPriority,
                 createdAt: new Date(q.createdAt * 1000).toISOString(),

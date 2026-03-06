@@ -64,6 +64,7 @@ Behavior:
 
 - creates queue config
 - initializes counters and flags
+- validates `job_ttl > 0`
 
 ### pause_queue(paused)
 
@@ -114,7 +115,7 @@ Accounts:
 Behavior:
 
 - validates queue not paused, worker online, job pending
-- expires job if TTL passed
+- if TTL passed: marks job `Expired`, decrements `pending_jobs`, and exits without assigning worker
 - transitions to processing and assigns worker
 
 ### complete_job(result)
@@ -206,6 +207,7 @@ Behavior:
 
 - decrements `worker_count`
 - closes worker account
+- blocked if `queue.processing_jobs > 0` (prevents orphaned in-flight jobs)
 
 ## 3. Enums
 
@@ -235,6 +237,7 @@ Behavior:
 - QueuePaused
 - MaxWorkersReached
 - UnauthorizedQueueAction
+- QueueHasProcessingJobs
 - PayloadTooLarge
 - InvalidJobStatus
 - JobExpired
@@ -248,3 +251,4 @@ Behavior:
 - WorkerAlreadyRegistered
 - ArithmeticOverflow
 - InvalidPriority
+- InvalidJobTtl

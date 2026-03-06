@@ -20,6 +20,10 @@ pub enum SolQueueError {
     #[msg("Unauthorized: only queue authority can perform this action")]
     UnauthorizedQueueAction,
 
+    /// Queue still has processing jobs, unsafe to perform this action
+    #[msg("Queue has processing jobs in flight")]
+    QueueHasProcessingJobs,
+
     // ---- Job Errors ----
     /// Job payload exceeds maximum size of 512 bytes
     #[msg("Job payload too large (max 512 bytes)")]
@@ -74,4 +78,8 @@ pub enum SolQueueError {
     /// Invalid priority value provided
     #[msg("Invalid priority value")]
     InvalidPriority,
+
+    /// Invalid job TTL value
+    #[msg("Invalid job TTL (must be > 0)")]
+    InvalidJobTtl,
 }

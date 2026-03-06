@@ -92,6 +92,39 @@ describe("solqueue", () => {
             });
         });
 
+        it("Rejects queue creation with invalid TTL", async () => {
+            const badQueueName = `ttl-0-${Date.now().toString().slice(-6)}`;
+            const [badQueuePda] = PublicKey.findProgramAddressSync(
+                [
+                    Buffer.from("queue"),
+                    authority.publicKey.toBuffer(),
+                    Buffer.from(badQueueName),
+                ],
+                program.programId
+            );
+
+            try {
+                await program.methods
+                    .createQueue(
+                        badQueueName,
+                        5,
+                        3,
+                        1,
+                        0, // invalid TTL
+                    )
+                    .accounts({
+                        authority: authority.publicKey,
+                        queueConfig: badQueuePda,
+                        systemProgram: SystemProgram.programId,
+                    })
+                    .rpc();
+                assert.fail("Should have thrown InvalidJobTtl error");
+            } catch (err) {
+                assert.include(err.message, "Invalid job TTL");
+                console.log("    ✅ Correctly rejected: Invalid job TTL");
+            }
+        });
+
         it("Pauses the queue", async () => {
             const tx = await program.methods
                 .pauseQueue(true)
@@ -531,6 +564,65 @@ describe("solqueue", () => {
                     workerAccount: workerPda,
                     queueConfig: queuePda,
                     jobAccount: newJobPda,
+                })
+                .rpc();
+        });
+
+        it("Rejects worker deregistration while queue has processing jobs", async () => {
+            const queueBefore = await program.account.queueConfig.fetch(queuePda);
+            const nextJobId = queueBefore.totalJobs;
+            const [processingJobPda] = PublicKey.findProgramAddressSync(
+                [
+                    Buffer.from("job"),
+                    queuePda.toBuffer(),
+                    nextJobId.toArrayLike(Buffer, "le", 8),
+                ],
+                program.programId
+            );
+
+            await program.methods
+                .submitJob(Buffer.from('{"test":"deregister_blocked"}'), 1)
+                .accounts({
+                    creator: authority.publicKey,
+                    queueConfig: queuePda,
+                    jobAccount: processingJobPda,
+                    systemProgram: SystemProgram.programId,
+                })
+                .rpc();
+
+            await program.methods
+                .claimJob()
+                .accounts({
+                    workerAuthority: authority.publicKey,
+                    workerAccount: workerPda,
+                    queueConfig: queuePda,
+                    jobAccount: processingJobPda,
+                })
+                .rpc();
+
+            try {
+                await program.methods
+                    .deregisterWorker()
+                    .accounts({
+                        authority: authority.publicKey,
+                        workerAccount: workerPda,
+                        queueConfig: queuePda,
+                    })
+                    .rpc();
+                assert.fail("Should have thrown QueueHasProcessingJobs error");
+            } catch (err) {
+                assert.include(err.message, "Queue has processing jobs in flight");
+                console.log("    ✅ Correctly rejected: Cannot deregister with in-flight jobs");
+            }
+
+            // Clean up by finishing the processing job.
+            await program.methods
+                .completeJob(Buffer.from("done-after-deregister-guard"))
+                .accounts({
+                    workerAuthority: authority.publicKey,
+                    workerAccount: workerPda,
+                    queueConfig: queuePda,
+                    jobAccount: processingJobPda,
                 })
                 .rpc();
         });

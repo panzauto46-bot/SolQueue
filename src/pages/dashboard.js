@@ -712,6 +712,15 @@ function renderModal() {
 }
 
 // Helper functions
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 function getStatusBadge(status) {
   const badges = {
     active: '<span class="badge badge-success"><span class="pulse-dot"></span> Active</span>',
@@ -722,7 +731,7 @@ function getStatusBadge(status) {
     pending: '<span class="badge badge-pending">◌ Pending</span>',
     failed: '<span class="badge badge-error">✗ Failed</span>',
   };
-  return badges[status] || `<span class="badge">${status}</span>`;
+  return badges[status] || `<span class="badge">${escapeHtml(status)}</span>`;
 }
 
 function getPriorityBadge(priority) {
@@ -731,7 +740,7 @@ function getPriorityBadge(priority) {
     medium: '<span style="color: var(--color-warning); font-size: 0.8rem; font-weight: 600;">🟡 Medium</span>',
     low: '<span style="color: var(--sol-green); font-size: 0.8rem; font-weight: 600;">🟢 Low</span>',
   };
-  return badges[priority] || priority;
+  return badges[priority] || escapeHtml(priority);
 }
 
 export function initDashboard(page) {
@@ -868,6 +877,20 @@ function showJobDetail(jobId) {
   const job = MOCK_JOBS.find(j => j.id === jobId);
   if (!job) return;
 
+  const safeJob = {
+    id: escapeHtml(job.id),
+    status: job.status,
+    name: escapeHtml(job.name),
+    queue: escapeHtml(job.queue),
+    priority: job.priority,
+    worker: job.worker ? escapeHtml(job.worker) : null,
+    attempts: Number(job.attempts) || 0,
+    payload: escapeHtml(job.payload || ''),
+    result: job.result ? escapeHtml(job.result) : null,
+    createdAt: escapeHtml(job.createdAt || ''),
+    processedAt: job.processedAt ? escapeHtml(job.processedAt) : null,
+  };
+
   const modal = document.getElementById('job-detail-modal');
   const modalBody = document.getElementById('modal-body-content');
 
@@ -875,44 +898,44 @@ function showJobDetail(jobId) {
     modalBody.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: var(--space-md);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span class="mono" style="color: var(--sol-purple-light); font-size: 0.9rem;">${job.id}</span>
-          ${getStatusBadge(job.status)}
+          <span class="mono" style="color: var(--sol-purple-light); font-size: 0.9rem;">${safeJob.id}</span>
+          ${getStatusBadge(safeJob.status)}
         </div>
         <div style="padding: var(--space-md); background: rgba(5,5,16,0.5); border-radius: var(--radius-md);">
           <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">JOB NAME</div>
-          <div class="mono">${job.name}</div>
+          <div class="mono">${safeJob.name}</div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md);">
           <div style="padding: var(--space-md); background: rgba(5,5,16,0.5); border-radius: var(--radius-md);">
             <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">QUEUE</div>
-            <div style="font-size: 0.9rem;">${job.queue}</div>
+            <div style="font-size: 0.9rem;">${safeJob.queue}</div>
           </div>
           <div style="padding: var(--space-md); background: rgba(5,5,16,0.5); border-radius: var(--radius-md);">
             <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">PRIORITY</div>
-            <div>${getPriorityBadge(job.priority)}</div>
+            <div>${getPriorityBadge(safeJob.priority)}</div>
           </div>
           <div style="padding: var(--space-md); background: rgba(5,5,16,0.5); border-radius: var(--radius-md);">
             <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">WORKER</div>
-            <div class="mono" style="font-size: 0.9rem;">${job.worker || 'Not assigned'}</div>
+            <div class="mono" style="font-size: 0.9rem;">${safeJob.worker || 'Not assigned'}</div>
           </div>
           <div style="padding: var(--space-md); background: rgba(5,5,16,0.5); border-radius: var(--radius-md);">
             <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">ATTEMPTS</div>
-            <div style="font-size: 0.9rem;">${job.attempts}</div>
+            <div style="font-size: 0.9rem;">${safeJob.attempts}</div>
           </div>
         </div>
         <div style="padding: var(--space-md); background: rgba(5,5,16,0.5); border-radius: var(--radius-md);">
           <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">PAYLOAD</div>
-          <pre class="mono" style="font-size: 0.8rem; color: var(--sol-green); white-space: pre-wrap; word-break: break-all;">${job.payload}</pre>
+          <pre class="mono" style="font-size: 0.8rem; color: var(--sol-green); white-space: pre-wrap; word-break: break-all;">${safeJob.payload}</pre>
         </div>
-        ${job.result ? `
+        ${safeJob.result ? `
           <div style="padding: var(--space-md); background: rgba(5,5,16,0.5); border-radius: var(--radius-md);">
             <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">RESULT</div>
-            <div class="mono" style="font-size: 0.85rem; color: ${job.status === 'failed' ? 'var(--color-error)' : 'var(--sol-green)'};">${job.result}</div>
+            <div class="mono" style="font-size: 0.85rem; color: ${safeJob.status === 'failed' ? 'var(--color-error)' : 'var(--sol-green)'};">${safeJob.result}</div>
           </div>
         ` : ''}
         <div style="display: flex; gap: var(--space-md); font-size: 0.8rem; color: var(--text-tertiary);">
-          <span>Created: ${job.createdAt}</span>
-          ${job.processedAt ? `<span>Processed: ${job.processedAt}</span>` : ''}
+          <span>Created: ${safeJob.createdAt}</span>
+          ${safeJob.processedAt ? `<span>Processed: ${safeJob.processedAt}</span>` : ''}
         </div>
       </div>
     `;

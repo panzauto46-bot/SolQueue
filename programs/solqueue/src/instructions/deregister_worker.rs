@@ -11,6 +11,12 @@ pub fn handle_deregister_worker(ctx: Context<DeregisterWorker>) -> Result<()> {
     let queue = &mut ctx.accounts.queue_config;
     let worker = &ctx.accounts.worker_account;
 
+    // Guard against orphaned processing jobs.
+    require!(
+        queue.processing_jobs == 0,
+        SolQueueError::QueueHasProcessingJobs
+    );
+
     let clock = Clock::get()?;
 
     // Decrement worker count

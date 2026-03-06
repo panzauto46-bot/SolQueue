@@ -508,6 +508,7 @@ export class SolQueueClient {
   // ─── Formatting Helpers ──────────────────────
 
   _formatQueue(raw, pubkey) {
+    const workerCount = raw.workerCount ?? 0;
     return {
       publicKey: pubkey.toString(),
       authority: raw.authority.toString(),
@@ -522,7 +523,8 @@ export class SolQueueClient {
       failedJobs: raw.failedJobs?.toNumber?.() || 0,
       pendingJobs: raw.pendingJobs?.toNumber?.() || 0,
       processingJobs: raw.processingJobs?.toNumber?.() || 0,
-      activeWorkers: raw.activeWorkers || 0,
+      workerCount,
+      activeWorkers: workerCount,
       createdAt: raw.createdAt?.toNumber?.() || 0,
       status: raw.isPaused ? 'paused' : 'active',
       successRate: raw.totalJobs?.toNumber?.() > 0 

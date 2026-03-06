@@ -23,6 +23,7 @@ pub fn handle_create_queue(
 ) -> Result<()> {
     require!(name.len() <= 32, SolQueueError::QueueNameTooLong);
     require!(max_workers > 0, SolQueueError::MaxWorkersReached);
+    require!(job_ttl > 0, SolQueueError::InvalidJobTtl);
 
     let priority = match default_priority {
         0 => Priority::Low,

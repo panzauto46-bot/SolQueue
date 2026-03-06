@@ -509,10 +509,16 @@ export function showToast(message, type = 'info', duration = 4000) {
 
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-    <span class="toast-icon ${type === 'loading' ? 'toast-spin' : ''}">${icons[type]}</span>
-    <span class="toast-message">${message}</span>
-  `;
+    const iconEl = document.createElement('span');
+    iconEl.className = `toast-icon ${type === 'loading' ? 'toast-spin' : ''}`;
+    iconEl.textContent = icons[type] || icons.info;
+
+    const messageEl = document.createElement('span');
+    messageEl.className = 'toast-message';
+    messageEl.textContent = message;
+
+    toast.appendChild(iconEl);
+    toast.appendChild(messageEl);
 
     container.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add('toast-visible'));
@@ -538,7 +544,7 @@ export async function sendWithFeedback(txFn, actionName) {
         setTimeout(() => loadingToast.remove(), 300);
 
         showToast(
-            `${actionName} confirmed! <a href="https://solscan.io/tx/${sig}?cluster=devnet" target="_blank" style="color:var(--accent-primary);">View ↗</a>`,
+            `${actionName} confirmed. Tx: ${sig}`,
             'success',
             6000
         );

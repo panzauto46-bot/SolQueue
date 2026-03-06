@@ -96,6 +96,7 @@ The program enforces queue safety with:
 4. Bounded payload and message sizes
 5. Counter updates using checked math
 6. Queue pause gate for submit/claim paths
+7. Worker deregistration guard when jobs are still processing
 
 ## 6. Web2 Queue Mapping
 

@@ -27,9 +27,12 @@ pub fn handle_claim_job(ctx: Context<ClaimJob>) -> Result<()> {
     // Check if job has expired
     if clock.unix_timestamp > job.expires_at {
         job.status = JobStatus::Expired;
+        job.worker = None;
+        job.claimed_at = 0;
         queue.pending_jobs = queue.pending_jobs.saturating_sub(1);
-        msg!("Job #{} has expired", job.job_id);
-        return Err(SolQueueError::JobExpired.into());
+        queue.updated_at = clock.unix_timestamp;
+        msg!("Job #{} expired and marked as Expired", job.job_id);
+        return Ok(());
     }
 
     // Atomically claim the job
