@@ -1,11 +1,96 @@
-import { MOCK_STATS, MOCK_QUEUES, MOCK_JOBS, MOCK_WORKERS, MOCK_ACTIVITIES, MOCK_CHART_DATA } from '../utils/mock-data.js';
+import { MOCK_QUEUES, MOCK_JOBS, MOCK_WORKERS, MOCK_ACTIVITIES, MOCK_CHART_DATA } from '../utils/mock-data.js';
 import { PipelineAnimation, BarChartAnimation, LineChartAnimation } from '../animations/pipeline.js';
-import { getWalletState, connectWallet, disconnectWallet, showToast, sendWithFeedback, onWalletChange } from '../utils/wallet-adapter.js';
-import { getData, getDataMode, setDataMode, onDataUpdate, initDataService } from '../utils/data-service.js';
+import { PublicKey } from '@solana/web3.js';
+import { getWalletState, connectWallet, disconnectWallet, showToast, sendWithFeedback, getClient } from '../utils/wallet-adapter.js';
+import { getData, getDataMode, setDataMode, onDataUpdate, refreshData, createDemoQueue, submitDemoJob } from '../utils/data-service.js';
 
 let pipelineAnim = null;
 let barChartAnim = null;
 let lineChartAnim = null;
+let dataUpdateUnsubscribe = null;
+
+function formatSyncTime(timestamp) {
+  if (!timestamp) return 'not synced yet';
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 5) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+}
+
+function computeStats(queues, jobs, workers) {
+  const completedFromQueues = queues.reduce((sum, q) => sum + (Number(q.completed) || 0), 0);
+  const totalFromQueues = queues.reduce((sum, q) => {
+    const pending = Number(q.pending) || 0;
+    const processing = Number(q.processing) || 0;
+    const completed = Number(q.completed) || 0;
+    const failed = Number(q.failed) || 0;
+    return sum + pending + processing + completed + failed;
+  }, 0);
+
+  const totalJobs = totalFromQueues || jobs.length || 0;
+  const completedJobs = completedFromQueues || jobs.filter(j => j.status === 'completed').length;
+  const pendingJobs = jobs.filter(j => j.status === 'pending').length || queues.reduce((sum, q) => sum + (Number(q.pending) || 0), 0);
+  const failedJobs = jobs.filter(j => j.status === 'failed').length || queues.reduce((sum, q) => sum + (Number(q.failed) || 0), 0);
+  const onlineWorkers = workers.filter(w => w.status === 'online').length;
+  const successRate = totalJobs > 0 ? ((completedJobs / totalJobs) * 100).toFixed(1) : '0.0';
+
+  return {
+    totalJobs,
+    activeQueues: queues.filter(q => q.status === 'active').length,
+    onlineWorkers,
+    successRate,
+    avgProcessingTime: '1.2s',
+    throughput: `${Math.max(1, Math.round(completedJobs / Math.max(1, queues.length)))} /hr`,
+    pendingJobs,
+    failedJobs,
+  };
+}
+
+function getDashboardDataSnapshot() {
+  const snapshot = getData();
+  const mode = snapshot.mode || getDataMode();
+  const liveMode = mode === 'live';
+  const payload = snapshot.data || {};
+
+  const queues = liveMode
+    ? (payload.queues || [])
+    : ((payload.queues && payload.queues.length > 0) ? payload.queues : MOCK_QUEUES);
+
+  const jobs = liveMode
+    ? (payload.jobs || [])
+    : ((payload.jobs && payload.jobs.length > 0) ? payload.jobs : MOCK_JOBS);
+
+  const workers = liveMode
+    ? (payload.workers || [])
+    : ((payload.workers && payload.workers.length > 0) ? payload.workers : MOCK_WORKERS);
+
+  const activities = liveMode
+    ? (payload.activities || [])
+    : ((payload.activities && payload.activities.length > 0) ? payload.activities : MOCK_ACTIVITIES);
+
+  const chartData = (payload.chartData && (payload.chartData.throughput || payload.chartData.lineData))
+    ? payload.chartData
+    : MOCK_CHART_DATA;
+
+  const stats = payload.stats && Object.keys(payload.stats).length > 0
+    ? payload.stats
+    : computeStats(queues, jobs, workers);
+
+  return {
+    mode,
+    liveMode,
+    meta: snapshot.meta || {},
+    queues,
+    jobs,
+    workers,
+    activities,
+    chartData,
+    stats,
+  };
+}
 
 export function renderDashboard(activePage = 'overview') {
   return `
@@ -14,6 +99,7 @@ export function renderDashboard(activePage = 'overview') {
       <div class="main-content">
         ${renderTopHeader(activePage)}
         <div class="page-content">
+          ${renderDataStatusStrip()}
           ${renderPageContent(activePage)}
         </div>
       </div>
@@ -23,11 +109,13 @@ export function renderDashboard(activePage = 'overview') {
 }
 
 function renderSidebar(activePage) {
+  const snapshot = getDashboardDataSnapshot();
+
   const navItems = [
     { id: 'overview', icon: '📊', label: 'Dashboard', badge: null },
-    { id: 'queues', icon: '📋', label: 'Queues', badge: MOCK_QUEUES.length },
-    { id: 'jobs', icon: '📄', label: 'Jobs', badge: MOCK_STATS.pendingJobs },
-    { id: 'workers', icon: '👷', label: 'Workers', badge: MOCK_STATS.onlineWorkers },
+    { id: 'queues', icon: '📋', label: 'Queues', badge: snapshot.queues.length },
+    { id: 'jobs', icon: '📄', label: 'Jobs', badge: snapshot.stats.pendingJobs || 0 },
+    { id: 'workers', icon: '👷', label: 'Workers', badge: snapshot.stats.onlineWorkers || 0 },
     { id: 'analytics', icon: '📈', label: 'Analytics', badge: null },
   ];
 
@@ -52,7 +140,7 @@ function renderSidebar(activePage) {
             <div class="nav-item ${activePage === item.id ? 'active' : ''}" data-page="${item.id}" id="nav-${item.id}">
               <span class="nav-icon">${item.icon}</span>
               <span>${item.label}</span>
-              ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
+              ${item.badge !== null && item.badge !== undefined ? `<span class="nav-badge">${item.badge}</span>` : ''}
             </div>
           `).join('')}
         </div>
@@ -97,6 +185,14 @@ function renderSidebar(activePage) {
 }
 
 function renderTopHeader(activePage) {
+  const snapshot = getDashboardDataSnapshot();
+  const ws = getWalletState();
+  const walletLabel = ws.connected
+    ? `${ws.publicKey.slice(0, 4)}...${ws.publicKey.slice(-4)}`
+    : 'Connect Wallet';
+  const modeText = snapshot.mode === 'live' ? 'LIVE DATA' : 'DEMO DATA';
+  const modeClass = snapshot.mode === 'live' ? 'live' : 'mock';
+
   const titles = {
     overview: 'Dashboard',
     queues: 'Queue Management',
@@ -117,6 +213,11 @@ function renderTopHeader(activePage) {
           <div class="header-breadcrumb">
             SolQueue / <span>${titles[activePage] || 'Dashboard'}</span>
           </div>
+          <div class="header-sync-meta">
+            ${snapshot.mode === 'live'
+      ? `On-chain sync · updated ${formatSyncTime(snapshot.meta.lastUpdated)}`
+      : 'Demo dataset mode'}
+          </div>
         </div>
       </div>
       <div class="header-right">
@@ -128,9 +229,12 @@ function renderTopHeader(activePage) {
           <span class="network-dot"></span>
           Devnet
         </div>
-        <button class="wallet-btn" id="header-wallet-btn" title="${getWalletState().connected ? 'Wallet Connected' : 'Connect Wallet'}">
+        <button class="data-mode-pill ${modeClass}" id="data-mode-toggle-btn" title="Toggle data mode">
+          ${modeText}
+        </button>
+        <button class="wallet-btn" id="header-wallet-btn" title="${ws.connected ? 'Wallet Connected' : 'Connect Wallet'}">
           <span class="wallet-icon">WL</span>
-          <span>${getWalletState().connected ? getWalletState().publicKey.slice(0, 4) + '...' + getWalletState().publicKey.slice(-4) : 'Connect'}</span>
+          <span>${walletLabel}</span>
         </button>
         <button class="btn btn-icon btn-ghost notification-btn" id="notifications-btn">
           🔔
@@ -138,6 +242,34 @@ function renderTopHeader(activePage) {
         </button>
       </div>
     </header>
+  `;
+}
+
+function renderDataStatusStrip() {
+  const snapshot = getDashboardDataSnapshot();
+  const ws = getWalletState();
+
+  if (snapshot.mode === 'live') {
+    const syncStatus = snapshot.meta.lastError
+      ? `<span class="data-status-error">Live sync warning: ${escapeHtml(snapshot.meta.lastError)}</span>`
+      : `On-chain mode active · Last sync ${formatSyncTime(snapshot.meta.lastUpdated)}`;
+
+    return `
+      <div class="data-status-strip live">
+        <div class="data-status-title">● LIVE ON-CHAIN</div>
+        <div class="data-status-text">${syncStatus}</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="data-status-strip mock">
+      <div class="data-status-title">● DEMO DATASET</div>
+      <div class="data-status-text">
+        Using curated sample data for walkthrough.
+        ${ws.connected ? 'Wallet connected — click LIVE DATA to switch to on-chain.' : 'Connect wallet to enable live on-chain mode.'}
+      </div>
+    </div>
   `;
 }
 
@@ -156,31 +288,36 @@ function renderPageContent(page) {
 }
 
 function renderOverview() {
+  const snapshot = getDashboardDataSnapshot();
+  const stats = snapshot.stats;
+  const jobs = snapshot.jobs;
+  const activities = snapshot.activities;
+
   return `
     <!-- Stats -->
     <div class="stats-grid">
       <div class="glass-card stat-card purple" data-animate="fadeInUp">
         <div class="stat-icon">📄</div>
         <div class="stat-label">Total Jobs</div>
-        <div class="stat-value" data-count-up="${MOCK_STATS.totalJobs}">0</div>
+        <div class="stat-value" data-count-up="${stats.totalJobs || 0}">0</div>
         <div class="stat-change positive">↑ 12.5% vs last week</div>
       </div>
       <div class="glass-card stat-card green" data-animate="fadeInUp">
         <div class="stat-icon">✅</div>
         <div class="stat-label">Success Rate</div>
-        <div class="stat-value" data-count-up="${MOCK_STATS.successRate}" data-suffix="%">0</div>
+        <div class="stat-value" data-count-up="${Number(stats.successRate || 0)}" data-suffix="%">0</div>
         <div class="stat-change positive">↑ 1.2% vs last week</div>
       </div>
       <div class="glass-card stat-card cyan" data-animate="fadeInUp">
         <div class="stat-icon">⚡</div>
         <div class="stat-label">Throughput</div>
-        <div class="stat-value">${MOCK_STATS.throughput}</div>
+        <div class="stat-value">${stats.throughput || '0/hr'}</div>
         <div class="stat-change positive">↑ 8.3% vs last week</div>
       </div>
       <div class="glass-card stat-card blue" data-animate="fadeInUp">
         <div class="stat-icon">👷</div>
         <div class="stat-label">Online Workers</div>
-        <div class="stat-value" data-count-up="${MOCK_STATS.onlineWorkers}">0</div>
+        <div class="stat-value" data-count-up="${stats.onlineWorkers || 0}">0</div>
         <div class="stat-change positive">↑ 2 new this week</div>
       </div>
     </div>
@@ -188,8 +325,8 @@ function renderOverview() {
     <!-- Pipeline Visualization -->
     <div class="glass-card-static pipeline-viz">
       <div class="viz-header">
-        <div class="viz-title">⚡ Live Pipeline</div>
-        <div class="badge badge-success"><span class="pulse-dot"></span> Live</div>
+        <div class="viz-title">⚡ ${snapshot.mode === 'live' ? 'Live' : 'Demo'} Pipeline</div>
+        <div class="badge ${snapshot.mode === 'live' ? 'badge-success' : 'badge-info'}"><span class="pulse-dot"></span> ${snapshot.mode === 'live' ? 'Live' : 'Demo'}</div>
       </div>
       <div class="pipeline-canvas-wrapper">
         <canvas id="pipeline-canvas"></canvas>
@@ -216,7 +353,7 @@ function renderOverview() {
               </tr>
             </thead>
             <tbody>
-              ${MOCK_JOBS.slice(0, 6).map(job => `
+              ${jobs.length > 0 ? jobs.slice(0, 6).map(job => `
                 <tr class="job-row" data-job-id="${job.id}">
                   <td><span class="mono" style="color: var(--sol-purple-light); font-size: 0.8rem;">${job.id}</span></td>
                   <td><span class="mono" style="font-size: 0.85rem;">${job.name}</span></td>
@@ -224,7 +361,11 @@ function renderOverview() {
                   <td>${getStatusBadge(job.status)}</td>
                   <td style="font-size: 0.8rem; color: var(--text-tertiary);">${job.createdAt}</td>
                 </tr>
-              `).join('')}
+              `).join('') : `
+                <tr>
+                  <td colspan="5" class="table-empty">No jobs yet. Submit your first job to start the pipeline.</td>
+                </tr>
+              `}
             </tbody>
           </table>
         </div>
@@ -237,7 +378,7 @@ function renderOverview() {
           <div class="badge badge-info"><span class="pulse-dot"></span> Realtime</div>
         </div>
         <div class="activity-list">
-          ${MOCK_ACTIVITIES.map(act => `
+          ${activities.length > 0 ? activities.map(act => `
             <div class="activity-item">
               <div class="activity-icon ${act.type}">${act.icon}</div>
               <div class="activity-content">
@@ -245,7 +386,11 @@ function renderOverview() {
                 <div class="activity-time">${act.time}</div>
               </div>
             </div>
-          `).join('')}
+          `).join('') : `
+            <div class="empty-state" style="padding: var(--space-lg);">
+              <div class="empty-desc">No activity yet. Transactions will appear here.</div>
+            </div>
+          `}
         </div>
       </div>
     </div>
@@ -253,16 +398,19 @@ function renderOverview() {
 }
 
 function renderQueues() {
+  const snapshot = getDashboardDataSnapshot();
+  const queues = snapshot.queues;
+
   return `
     <div class="jobs-header" style="margin-bottom: var(--space-lg);">
       <div class="flex items-center gap-md">
         <h3 class="heading-sm">All Queues</h3>
-        <span class="badge badge-info">${MOCK_QUEUES.length} queues</span>
+        <span class="badge badge-info">${queues.length} queues</span>
       </div>
       <a href="#/dashboard/create-queue" class="btn btn-primary btn-sm">➕ Create Queue</a>
     </div>
     <div class="queues-grid">
-      ${MOCK_QUEUES.map(queue => `
+      ${queues.length > 0 ? queues.map(queue => `
         <div class="glass-card queue-card ${queue.status}">
           <div class="queue-card-header">
             <div>
@@ -274,7 +422,7 @@ function renderQueues() {
             ${getStatusBadge(queue.status)}
           </div>
           <div class="progress-bar" style="margin-top: var(--space-md);">
-            <div class="progress-fill green" style="width: ${(queue.completed / (queue.completed + queue.pending + queue.processing + queue.failed)) * 100}%"></div>
+            <div class="progress-fill green" style="width: ${Math.round((queue.completed / Math.max(1, (queue.completed + queue.pending + queue.processing + (queue.failed || 0)))) * 100)}%"></div>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 6px;">
             Throughput: ${queue.throughput}
@@ -294,17 +442,27 @@ function renderQueues() {
             </div>
           </div>
         </div>
-      `).join('')}
+      `).join('') : `
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">No Queues Found</div>
+          <div class="empty-desc">Create your first queue to start processing jobs on-chain.</div>
+          <a href="#/dashboard/create-queue" class="btn btn-primary btn-sm">➕ Create Queue</a>
+        </div>
+      `}
     </div>
   `;
 }
 
 function renderJobs() {
+  const snapshot = getDashboardDataSnapshot();
+  const jobs = snapshot.jobs;
+
   return `
     <div class="jobs-header">
       <div class="flex items-center gap-md">
         <h3 class="heading-sm">All Jobs</h3>
-        <span class="badge badge-info">${MOCK_JOBS.length} jobs</span>
+        <span class="badge badge-info">${jobs.length} jobs</span>
       </div>
       <div class="flex items-center gap-md">
         <div class="jobs-filters">
@@ -342,7 +500,7 @@ function renderJobs() {
           </tr>
         </thead>
         <tbody id="jobs-table-body">
-          ${MOCK_JOBS.map(job => `
+          ${jobs.length > 0 ? jobs.map(job => `
             <tr class="job-row" data-job-id="${job.id}" data-status="${job.status}">
               <td><span class="mono" style="color: var(--sol-purple-light); font-size: 0.8rem; cursor: pointer;" data-show-detail="${job.id}">${job.id}</span></td>
               <td><span class="mono" style="font-size: 0.85rem;">${job.name}</span></td>
@@ -353,7 +511,11 @@ function renderJobs() {
               <td style="text-align: center;">${job.attempts}</td>
               <td style="font-size: 0.8rem; color: var(--text-tertiary);">${job.createdAt}</td>
             </tr>
-          `).join('')}
+          `).join('') : `
+            <tr>
+              <td colspan="8" class="table-empty">No jobs available yet for this mode.</td>
+            </tr>
+          `}
         </tbody>
       </table>
     </div>
@@ -361,16 +523,20 @@ function renderJobs() {
 }
 
 function renderWorkers() {
+  const snapshot = getDashboardDataSnapshot();
+  const workers = snapshot.workers;
+  const online = workers.filter(w => w.status === 'online').length;
+
   return `
     <div class="jobs-header" style="margin-bottom: var(--space-lg);">
       <div class="flex items-center gap-md">
         <h3 class="heading-sm">Worker Registry</h3>
-        <span class="badge badge-success"><span class="pulse-dot"></span> ${MOCK_WORKERS.filter(w => w.status === 'online').length} Online</span>
+        <span class="badge badge-success"><span class="pulse-dot"></span> ${online} Online</span>
       </div>
       <button class="btn btn-primary btn-sm">👷 Register Worker</button>
     </div>
     <div class="workers-grid">
-      ${MOCK_WORKERS.map(worker => `
+      ${workers.length > 0 ? workers.map(worker => `
         <div class="glass-card worker-card">
           <div class="worker-header">
             <div class="worker-avatar">${worker.id}</div>
@@ -410,12 +576,29 @@ function renderWorkers() {
             </div>
           </div>
         </div>
-      `).join('')}
+      `).join('') : `
+        <div class="empty-state">
+          <div class="empty-icon">👷</div>
+          <div class="empty-title">No Workers Registered</div>
+          <div class="empty-desc">Register workers to start claiming and processing jobs.</div>
+        </div>
+      `}
     </div>
   `;
 }
 
 function renderAnalytics() {
+  const snapshot = getDashboardDataSnapshot();
+  const stats = snapshot.stats;
+  const success = Number(stats.successRate || 0);
+  const failed = Number(stats.totalJobs || 0) > 0
+    ? Math.round((Number(stats.failedJobs || 0) / Number(stats.totalJobs || 1)) * 100)
+    : 0;
+  const pending = Number(stats.totalJobs || 0) > 0
+    ? Math.max(0, Math.round((Number(stats.pendingJobs || 0) / Number(stats.totalJobs || 1)) * 100))
+    : 0;
+  const processing = Math.max(0, 100 - Math.round(success) - failed - pending);
+
   return `
     <div class="charts-grid">
       <!-- Throughput Chart -->
@@ -442,20 +625,20 @@ function renderAnalytics() {
           <svg viewBox="0 0 200 200">
             <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="24"/>
             <circle cx="100" cy="100" r="80" fill="none" stroke="#14F195" stroke-width="24"
-              stroke-dasharray="${0.85 * 502} ${502}" stroke-dashoffset="0"
+              stroke-dasharray="${(success / 100) * 502} ${502}" stroke-dashoffset="0"
               style="transition: stroke-dasharray 1.5s ease;"/>
             <circle cx="100" cy="100" r="80" fill="none" stroke="#3b82f6" stroke-width="24"
-              stroke-dasharray="${0.08 * 502} ${502}" stroke-dashoffset="${-0.85 * 502}"
+              stroke-dasharray="${(processing / 100) * 502} ${502}" stroke-dashoffset="${-(success / 100) * 502}"
               style="transition: stroke-dasharray 1.5s ease;"/>
             <circle cx="100" cy="100" r="80" fill="none" stroke="#9945FF" stroke-width="24"
-              stroke-dasharray="${0.04 * 502} ${502}" stroke-dashoffset="${-(0.85 + 0.08) * 502}"
+              stroke-dasharray="${(pending / 100) * 502} ${502}" stroke-dashoffset="${-((success + processing) / 100) * 502}"
               style="transition: stroke-dasharray 1.5s ease;"/>
             <circle cx="100" cy="100" r="80" fill="none" stroke="#ff4545" stroke-width="24"
-              stroke-dasharray="${0.03 * 502} ${502}" stroke-dashoffset="${-(0.85 + 0.08 + 0.04) * 502}"
+              stroke-dasharray="${(failed / 100) * 502} ${502}" stroke-dashoffset="${-((success + processing + pending) / 100) * 502}"
               style="transition: stroke-dasharray 1.5s ease;"/>
           </svg>
           <div class="donut-center">
-            <div class="donut-value text-gradient">97.3%</div>
+            <div class="donut-value text-gradient">${success.toFixed(1)}%</div>
             <div class="donut-label">Success</div>
           </div>
         </div>
@@ -463,22 +646,22 @@ function renderAnalytics() {
           <div class="legend-item">
             <div class="legend-dot" style="background: var(--sol-green);"></div>
             <span>Completed</span>
-            <span class="legend-value">85%</span>
+            <span class="legend-value">${Math.round(success)}%</span>
           </div>
           <div class="legend-item">
             <div class="legend-dot" style="background: var(--sol-blue);"></div>
             <span>Processing</span>
-            <span class="legend-value">8%</span>
+            <span class="legend-value">${processing}%</span>
           </div>
           <div class="legend-item">
             <div class="legend-dot" style="background: var(--sol-purple);"></div>
             <span>Pending</span>
-            <span class="legend-value">4%</span>
+            <span class="legend-value">${pending}%</span>
           </div>
           <div class="legend-item">
             <div class="legend-dot" style="background: var(--color-error);"></div>
             <span>Failed</span>
-            <span class="legend-value">3%</span>
+            <span class="legend-value">${failed}%</span>
           </div>
         </div>
       </div>
@@ -509,7 +692,7 @@ function renderAnalytics() {
       <div class="glass-card stat-card cyan">
         <div class="stat-icon">⏱️</div>
         <div class="stat-label">Avg Processing Time</div>
-        <div class="stat-value">${MOCK_STATS.avgProcessingTime}</div>
+        <div class="stat-value">${stats.avgProcessingTime || 'N/A'}</div>
         <div class="stat-change positive">↓ 0.3s faster</div>
       </div>
       <div class="glass-card stat-card purple">
@@ -521,7 +704,7 @@ function renderAnalytics() {
       <div class="glass-card stat-card green">
         <div class="stat-icon">📊</div>
         <div class="stat-label">Queue Utilization</div>
-        <div class="stat-value">78%</div>
+        <div class="stat-value">${Math.min(100, Math.max(0, Math.round(((stats.pendingJobs || 0) + (stats.failedJobs || 0)) > 0 ? 100 - (failed || 0) : 78)))}%</div>
         <div class="stat-change positive">↑ 5% vs last week</div>
       </div>
     </div>
@@ -529,13 +712,20 @@ function renderAnalytics() {
 }
 
 function renderCreateQueue() {
+  const mode = getDataMode();
   return `
     <div class="glass-card-static" style="padding: var(--space-xl); max-width: 700px;">
       <h3 class="heading-sm" style="margin-bottom: var(--space-xl);">Create New Queue</h3>
+      <div class="form-mode-hint ${mode === 'live' ? 'live' : 'mock'}">
+        ${mode === 'live'
+      ? 'Live mode: this action will send an on-chain transaction.'
+      : 'Demo mode: this action updates local demo data instantly.'}
+      </div>
       <div class="create-form">
         <div class="form-group">
           <label>Queue Name</label>
           <input type="text" class="input-field" placeholder="e.g., email-notifications" id="queue-name-input">
+          <div class="field-help">Use lowercase letters, numbers, hyphen, or underscore (3-32 chars).</div>
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -586,17 +776,27 @@ function renderCreateQueue() {
 }
 
 function renderSubmitJob() {
+  const snapshot = getDashboardDataSnapshot();
+  const queues = snapshot.queues.filter(q => q.status === 'active');
+  const mode = snapshot.mode;
+
   return `
     <div class="glass-card-static" style="padding: var(--space-xl); max-width: 700px;">
       <h3 class="heading-sm" style="margin-bottom: var(--space-xl);">Submit New Job</h3>
+      <div class="form-mode-hint ${mode === 'live' ? 'live' : 'mock'}">
+        ${mode === 'live'
+      ? 'Live mode: payload will be submitted on-chain.'
+      : 'Demo mode: payload is validated and added to demo queue only.'}
+      </div>
       <div class="create-form">
         <div class="form-group">
           <label>Queue</label>
           <select class="select-field" id="job-queue-select">
-            ${MOCK_QUEUES.filter(q => q.status === 'active').map(q => `
-              <option value="${q.id}">${q.name}</option>
+            ${queues.map(q => `
+              <option value="${q.publicKey || q.id}">${q.name}</option>
             `).join('')}
           </select>
+          ${queues.length === 0 ? '<div class="field-help error">No active queues available in current mode.</div>' : ''}
         </div>
         <div class="form-group">
           <label>Job Name</label>
@@ -613,9 +813,10 @@ function renderSubmitJob() {
         <div class="form-group">
           <label>Payload (JSON)</label>
           <textarea class="input-field mono" rows="6" placeholder='{"to": "user@example.com", "template": "welcome"}' id="job-payload" style="resize: vertical; font-size: 0.85rem;"></textarea>
+          <div class="field-help">Maximum payload size for on-chain submit: 512 bytes.</div>
         </div>
         <div class="form-actions">
-          <button class="btn btn-primary" id="submit-job-btn">
+          <button class="btn btn-primary" id="submit-job-btn" ${queues.length === 0 ? 'disabled' : ''}>
             📨 Submit Job
           </button>
           <a href="#/dashboard/jobs" class="btn btn-secondary">Cancel</a>
@@ -627,7 +828,8 @@ function renderSubmitJob() {
 
 function renderSettings() {
   const ws = getWalletState();
-  const mode = getDataMode();
+  const snapshot = getDashboardDataSnapshot();
+  const mode = snapshot.mode;
   return `
     <div class="glass-card-static" style="padding: var(--space-xl); max-width: 700px;">
       <h3 class="heading-sm" style="margin-bottom: var(--space-xl);">Settings</h3>
@@ -655,6 +857,10 @@ function renderSettings() {
       ? `<span style="color:#14F195;">● Connected</span> — ${ws.publicKey.slice(0, 8)}...${ws.publicKey.slice(-8)} <span style="color:var(--text-tertiary);">(${ws.balance.toFixed(4)} SOL)</span>`
       : '<span style="color:var(--text-tertiary);">● Not connected</span>'}
           </div>
+          <div class="field-help ${mode === 'live' ? 'success' : ''}">
+            Current data mode: <strong>${mode === 'live' ? 'Live On-Chain' : 'Demo Dataset'}</strong>
+            ${snapshot.meta?.lastUpdated ? ` · Last sync ${formatSyncTime(snapshot.meta.lastUpdated)}` : ''}
+          </div>
         </div>
         <div class="form-group">
           <label class="flex items-center gap-md">
@@ -664,6 +870,7 @@ function renderSettings() {
             </label>
             Use live on-chain data (requires wallet + deployed program)
           </label>
+          ${!ws.connected ? '<div class="field-help">Tip: connect wallet first to enable live mode.</div>' : ''}
         </div>
         <div class="form-group">
           <label class="flex items-center gap-md">
@@ -747,6 +954,19 @@ export function initDashboard(page) {
   // Cleanup previous animations
   destroyAnimations();
 
+  if (dataUpdateUnsubscribe) {
+    dataUpdateUnsubscribe();
+    dataUpdateUnsubscribe = null;
+  }
+
+  dataUpdateUnsubscribe = onDataUpdate(() => {
+    if (!window.location.hash.startsWith('#/dashboard')) return;
+    if (getDataMode() !== 'live') return;
+    const page = (window.location.hash.split('/')[2] || 'overview').trim();
+    if (!['overview', 'queues', 'jobs', 'workers', 'analytics'].includes(page)) return;
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+
   // Initialize sidebar navigation
   document.querySelectorAll('.nav-item[data-page]').forEach(item => {
     item.addEventListener('click', () => {
@@ -801,6 +1021,13 @@ export function initDashboard(page) {
     });
   }
 
+  const dataModeToggleBtn = document.getElementById('data-mode-toggle-btn');
+  if (dataModeToggleBtn) {
+    dataModeToggleBtn.addEventListener('click', async () => {
+      await toggleDataModeWithFeedback();
+    });
+  }
+
   // Job row click
   document.querySelectorAll('.job-row').forEach(row => {
     row.addEventListener('click', () => {
@@ -845,18 +1072,31 @@ export function initDashboard(page) {
   }
 
   if (page === 'analytics') {
+    const snapshot = getDashboardDataSnapshot();
     const barCanvas = document.getElementById('bar-chart');
     if (barCanvas) {
-      barChartAnim = new BarChartAnimation(barCanvas, MOCK_CHART_DATA.throughput, '#9945FF');
+      barChartAnim = new BarChartAnimation(barCanvas, snapshot.chartData.throughput || MOCK_CHART_DATA.throughput, '#9945FF');
     }
 
     const lineCanvas = document.getElementById('line-chart');
     if (lineCanvas) {
       lineChartAnim = new LineChartAnimation(lineCanvas, [
-        { data: MOCK_CHART_DATA.lineData.completed, color: '#14F195' },
-        { data: MOCK_CHART_DATA.lineData.failed, color: '#ff4545' },
+        { data: snapshot.chartData?.lineData?.completed || MOCK_CHART_DATA.lineData.completed, color: '#14F195' },
+        { data: snapshot.chartData?.lineData?.failed || MOCK_CHART_DATA.lineData.failed, color: '#ff4545' },
       ]);
     }
+  }
+
+  if (page === 'create-queue') {
+    wireCreateQueueForm();
+  }
+
+  if (page === 'submit-job') {
+    wireSubmitJobForm();
+  }
+
+  if (page === 'settings') {
+    wireSettingsForm();
   }
 
   // Scroll animations
@@ -873,8 +1113,246 @@ export function initDashboard(page) {
   document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
 }
 
+async function toggleDataModeWithFeedback() {
+  const current = getDataMode();
+
+  if (current === 'mock') {
+    if (!getWalletState().connected) {
+      showToast('Connect wallet first to enable live on-chain mode', 'info');
+      try {
+        await connectWallet();
+      } catch { }
+      if (!getWalletState().connected) {
+        return;
+      }
+    }
+
+    const switchResult = setDataMode('live');
+    if (!switchResult?.ok) {
+      showToast('Unable to switch to live mode. Please reconnect wallet.', 'error');
+      return;
+    }
+    await refreshData();
+    showToast('Switched to live on-chain data', 'success');
+  } else {
+    setDataMode('mock');
+    showToast('Switched to demo dataset mode', 'info');
+  }
+
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+}
+
+function clearFieldError(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.classList.remove('input-invalid');
+  const error = document.getElementById(`${inputId}-error`);
+  if (error) error.remove();
+}
+
+function setFieldError(inputId, message) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  clearFieldError(inputId);
+  input.classList.add('input-invalid');
+  const error = document.createElement('div');
+  error.className = 'field-help error';
+  error.id = `${inputId}-error`;
+  error.textContent = message;
+  input.insertAdjacentElement('afterend', error);
+}
+
+function wireCreateQueueForm() {
+  const createBtn = document.getElementById('create-queue-btn');
+  if (!createBtn) return;
+
+  const watched = ['queue-name-input', 'queue-max-retries', 'queue-max-workers', 'queue-ttl'];
+  watched.forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', () => clearFieldError(id));
+  });
+
+  createBtn.addEventListener('click', async () => {
+    const name = document.getElementById('queue-name-input')?.value?.trim() || '';
+    const priority = document.getElementById('queue-priority')?.value || 'medium';
+    const maxRetries = Number(document.getElementById('queue-max-retries')?.value || 0);
+    const maxWorkers = Number(document.getElementById('queue-max-workers')?.value || 0);
+    const ttl = Number(document.getElementById('queue-ttl')?.value || 0);
+    const description = document.getElementById('queue-description')?.value?.trim() || '';
+
+    let hasError = false;
+    if (!/^[a-z0-9_-]{3,32}$/.test(name)) {
+      setFieldError('queue-name-input', 'Queue name must be 3-32 chars (lowercase, number, hyphen, underscore).');
+      hasError = true;
+    }
+    if (!Number.isInteger(maxRetries) || maxRetries < 0 || maxRetries > 10) {
+      setFieldError('queue-max-retries', 'Max retries must be between 0 and 10.');
+      hasError = true;
+    }
+    if (!Number.isInteger(maxWorkers) || maxWorkers < 1 || maxWorkers > 50) {
+      setFieldError('queue-max-workers', 'Max workers must be between 1 and 50.');
+      hasError = true;
+    }
+    if (!Number.isInteger(ttl) || ttl < 60 || ttl > 604800) {
+      setFieldError('queue-ttl', 'TTL must be between 60 and 604800 seconds.');
+      hasError = true;
+    }
+    if (hasError) {
+      showToast('Please fix form validation errors first', 'error');
+      return;
+    }
+
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating...';
+
+    try {
+      if (getDataMode() === 'live') {
+        const client = getClient();
+        if (!client?.isConnected) {
+          throw new Error('Wallet not connected');
+        }
+        const priorityMap = { low: 0, medium: 1, high: 2 };
+        await sendWithFeedback(
+          () => client.createQueue(name, maxWorkers, maxRetries, priorityMap[priority] ?? 1, ttl),
+          'Create queue'
+        );
+        await refreshData();
+      } else {
+        createDemoQueue({
+          name,
+          priority,
+          maxRetries,
+          maxWorkers,
+          ttl,
+          description,
+        });
+        showToast(`Queue "${name}" created in demo mode`, 'success');
+      }
+
+      window.location.hash = '/dashboard/queues';
+    } catch (error) {
+      showToast(error?.message || 'Failed to create queue', 'error');
+    } finally {
+      createBtn.disabled = false;
+      createBtn.textContent = '➕ Create Queue';
+    }
+  });
+}
+
+function wireSubmitJobForm() {
+  const submitBtn = document.getElementById('submit-job-btn');
+  if (!submitBtn) return;
+
+  const watched = ['job-name-input', 'job-payload'];
+  watched.forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', () => clearFieldError(id));
+  });
+
+  submitBtn.addEventListener('click', async () => {
+    const queueValue = document.getElementById('job-queue-select')?.value;
+    const jobName = document.getElementById('job-name-input')?.value?.trim() || '';
+    const priority = document.getElementById('job-priority')?.value || 'medium';
+    const payloadRaw = document.getElementById('job-payload')?.value?.trim() || '';
+
+    const snapshot = getDashboardDataSnapshot();
+    const queue = snapshot.queues.find((q) => String(q.publicKey || q.id) === String(queueValue));
+
+    let hasError = false;
+    if (!queueValue || !queue) {
+      showToast('Please select an active queue', 'error');
+      return;
+    }
+    if (!/^[a-z0-9_-]{3,48}$/.test(jobName)) {
+      setFieldError('job-name-input', 'Job name must be 3-48 chars (lowercase, number, hyphen, underscore).');
+      hasError = true;
+    }
+
+    let payloadObject = null;
+    try {
+      payloadObject = JSON.parse(payloadRaw || '{}');
+    } catch {
+      setFieldError('job-payload', 'Payload must be valid JSON.');
+      hasError = true;
+    }
+
+    const payloadText = payloadObject ? JSON.stringify(payloadObject) : '';
+    if (payloadText && new TextEncoder().encode(payloadText).length > 512) {
+      setFieldError('job-payload', 'Payload exceeds 512 bytes for on-chain submit.');
+      hasError = true;
+    }
+
+    if (hasError) {
+      showToast('Please fix form validation errors first', 'error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    try {
+      if (getDataMode() === 'live') {
+        const client = getClient();
+        if (!client?.isConnected) {
+          throw new Error('Wallet not connected');
+        }
+        const priorityMap = { low: 0, medium: 1, high: 2 };
+        const queuePda = new PublicKey(queue.publicKey || queue.id);
+        await sendWithFeedback(
+          () => client.submitJob(queuePda, payloadText, priorityMap[priority] ?? 1),
+          'Submit job'
+        );
+        await refreshData();
+      } else {
+        submitDemoJob({
+          queueId: queueValue,
+          queueName: queue.name,
+          name: jobName,
+          priority,
+          payload: payloadObject,
+        });
+        showToast(`Job "${jobName}" submitted in demo mode`, 'success');
+      }
+
+      window.location.hash = '/dashboard/jobs';
+    } catch (error) {
+      showToast(error?.message || 'Failed to submit job', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '📨 Submit Job';
+    }
+  });
+}
+
+function wireSettingsForm() {
+  const saveBtn = document.getElementById('save-settings-btn');
+  if (!saveBtn) return;
+
+  saveBtn.addEventListener('click', async () => {
+    const useLive = document.getElementById('settings-live-data')?.checked;
+
+    if (useLive) {
+      if (!getWalletState().connected) {
+        showToast('Connect wallet first before enabling live mode', 'info');
+        return;
+      }
+      const result = setDataMode('live');
+      if (!result?.ok) {
+        showToast('Unable to enable live mode. Please reconnect wallet.', 'error');
+        return;
+      }
+      await refreshData();
+      showToast('Settings saved: Live on-chain data enabled', 'success');
+    } else {
+      setDataMode('mock');
+      showToast('Settings saved: Demo dataset mode enabled', 'success');
+    }
+
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  });
+}
+
 function showJobDetail(jobId) {
-  const job = MOCK_JOBS.find(j => j.id === jobId);
+  const snapshot = getDashboardDataSnapshot();
+  const job = snapshot.jobs.find(j => j.id === jobId);
   if (!job) return;
 
   const safeJob = {

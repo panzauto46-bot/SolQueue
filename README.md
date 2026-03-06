@@ -85,6 +85,8 @@ By bringing this pattern **on-chain**, we demonstrate that Solana can serve as a
 | 🔒 **Atomic Claims** | Solana's runtime atomicity eliminates race conditions — no distributed locks needed |
 | 📊 **On-Chain Analytics** | Success rates, throughput, and processing times stored transparently on-chain |
 | ⏱️ **Job TTL & Expiry** | Expired jobs can be reclaimed or cleaned up automatically |
+| 🔀 **Demo ↔ Live Data Mode** | Hybrid UX: demo dataset by default, one-click switch to live on-chain data when wallet is connected |
+| ✅ **Form Validation & Feedback** | Create Queue / Submit Job forms include strict validation, mode-aware hints, and transaction feedback |
 | 🔍 **State Machine** | Complete job lifecycle: `Pending → Processing → Completed/Failed` |
 | 🌐 **Web Dashboard** | Professional real-time dashboard with 3D animations and live monitoring |
 

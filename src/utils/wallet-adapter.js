@@ -353,7 +353,7 @@ export function updateDashboardWalletUI(state) {
         } else {
             headerBtn.innerHTML = `
                 <span class="wallet-icon">WL</span>
-                <span>Connect</span>
+                <span>Connect Wallet</span>
             `;
             headerBtn.title = 'Connect Wallet';
             headerBtn.style.background = '';

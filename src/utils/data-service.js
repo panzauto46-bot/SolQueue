@@ -24,6 +24,15 @@ let cachedData = {
 };
 let refreshInterval = null;
 let dataListeners = [];
+let dataMeta = {
+    lastUpdated: null,
+    lastError: null,
+    source: 'mock',
+};
+
+function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+}
 
 /**
  * Subscribe to data updates
@@ -36,7 +45,11 @@ export function onDataUpdate(callback) {
 }
 
 function notifyDataListeners() {
-    dataListeners.forEach(cb => cb({ mode: dataMode, data: cachedData }));
+    dataListeners.forEach(cb => cb({
+        mode: dataMode,
+        data: cachedData,
+        meta: { ...dataMeta },
+    }));
 }
 
 /**
@@ -50,6 +63,25 @@ export function getDataMode() {
  * Switch between mock and live data
  */
 export function setDataMode(mode) {
+    if (mode !== 'mock' && mode !== 'live') {
+        return { ok: false, reason: 'invalid_mode', mode: dataMode };
+    }
+
+    try { localStorage.setItem('solqueue_data_mode', mode); } catch { }
+
+    if (mode === 'live') {
+        const ws = getWalletState();
+        const client = getClient();
+        if (!ws.connected || !client?.isConnected) {
+            dataMode = 'mock';
+            stopLiveRefresh();
+            loadMockData();
+            dataMeta.lastError = 'Wallet not connected. Live mode requires active wallet.';
+            notifyDataListeners();
+            return { ok: false, reason: 'wallet_not_connected', mode: dataMode };
+        }
+    }
+
     dataMode = mode;
     if (mode === 'live') {
         startLiveRefresh();
@@ -57,6 +89,8 @@ export function setDataMode(mode) {
         stopLiveRefresh();
         loadMockData();
     }
+
+    return { ok: true, mode: dataMode };
 }
 
 // ═══════════════════════════════════════════════
@@ -65,13 +99,16 @@ export function setDataMode(mode) {
 
 function loadMockData() {
     cachedData = {
-        queues: MOCK_QUEUES,
-        jobs: MOCK_JOBS,
-        workers: MOCK_WORKERS,
-        stats: MOCK_STATS,
-        activities: MOCK_ACTIVITIES,
-        chartData: MOCK_CHART_DATA,
+        queues: clone(MOCK_QUEUES),
+        jobs: clone(MOCK_JOBS),
+        workers: clone(MOCK_WORKERS),
+        stats: clone(MOCK_STATS),
+        activities: clone(MOCK_ACTIVITIES),
+        chartData: clone(MOCK_CHART_DATA),
     };
+    dataMeta.lastUpdated = Date.now();
+    dataMeta.lastError = null;
+    dataMeta.source = 'mock';
     notifyDataListeners();
 }
 
@@ -84,6 +121,8 @@ async function fetchLiveData() {
     if (!client || !client.isConnected) {
         console.warn('No client connected, falling back to mock data');
         setDataMode('mock');
+        dataMeta.lastError = 'Wallet disconnected. Switched back to demo mode.';
+        notifyDataListeners();
         return;
     }
 
@@ -184,9 +223,14 @@ async function fetchLiveData() {
             chartData: MOCK_CHART_DATA, // Use mock charts until more data accumulates
         };
 
+        dataMeta.lastUpdated = Date.now();
+        dataMeta.lastError = null;
+        dataMeta.source = 'live';
         notifyDataListeners();
     } catch (error) {
         console.error('Failed to fetch live data:', error);
+        dataMeta.lastError = error?.message || 'Failed to sync live data';
+        notifyDataListeners();
         // Keep showing last known data
     }
 }
@@ -235,6 +279,13 @@ export function initDataService() {
     // Load mock data initially
     loadMockData();
 
+    try {
+        const preferredMode = localStorage.getItem('solqueue_data_mode');
+        if (preferredMode === 'live') {
+            setDataMode('live');
+        }
+    } catch { }
+
     // Watch for wallet changes
     onWalletChange((state) => {
         if (state.connected && dataMode === 'mock') {
@@ -244,6 +295,8 @@ export function initDataService() {
         }
         if (!state.connected && dataMode === 'live') {
             setDataMode('mock');
+            dataMeta.lastError = 'Wallet disconnected. Switched to demo mode.';
+            notifyDataListeners();
         }
     });
 }
@@ -252,7 +305,7 @@ export function initDataService() {
  * Get current cached data
  */
 export function getData() {
-    return { mode: dataMode, data: cachedData };
+    return { mode: dataMode, data: cachedData, meta: { ...dataMeta } };
 }
 
 /**
@@ -264,6 +317,124 @@ export async function refreshData() {
     } else {
         loadMockData();
     }
+}
+
+/**
+ * Create a queue directly in demo mode data.
+ */
+export function createDemoQueue({
+    name,
+    priority = 'medium',
+    maxRetries = 3,
+    maxWorkers = 5,
+    ttl = 3600,
+    description = '',
+}) {
+    if (dataMode !== 'mock') {
+        return null;
+    }
+
+    const queue = {
+        id: `demo-queue-${Date.now()}`,
+        name,
+        status: 'active',
+        pending: 0,
+        processing: 0,
+        completed: 0,
+        failed: 0,
+        workers: 0,
+        maxRetries,
+        maxWorkers,
+        ttl,
+        priority,
+        throughput: '0/hr',
+        description,
+    };
+
+    cachedData.queues = [queue, ...(cachedData.queues || [])];
+    cachedData.stats = {
+        ...(cachedData.stats || {}),
+        activeQueues: (cachedData.stats?.activeQueues || 0) + 1,
+    };
+    cachedData.activities = [
+        {
+            type: 'created',
+            icon: '+',
+            text: `<strong>${name}</strong> queue created in demo mode`,
+            time: 'just now',
+        },
+        ...(cachedData.activities || []),
+    ].slice(0, 20);
+
+    dataMeta.lastUpdated = Date.now();
+    dataMeta.lastError = null;
+    dataMeta.source = 'mock';
+    notifyDataListeners();
+
+    return queue;
+}
+
+/**
+ * Submit a job directly in demo mode data.
+ */
+export function submitDemoJob({
+    queueId,
+    queueName,
+    name,
+    priority = 'medium',
+    payload = {},
+}) {
+    if (dataMode !== 'mock') {
+        return null;
+    }
+
+    const nextIndex = (cachedData.jobs?.length || 0) + 1;
+    const jobId = `job-${String(nextIndex).padStart(3, '0')}`;
+    const payloadText = typeof payload === 'string' ? payload : JSON.stringify(payload);
+
+    const job = {
+        id: jobId,
+        queue: queueName,
+        name,
+        status: 'pending',
+        priority,
+        payload: payloadText,
+        result: '',
+        attempts: 0,
+        createdAt: 'just now',
+        processedAt: null,
+        worker: null,
+    };
+
+    cachedData.jobs = [job, ...(cachedData.jobs || [])];
+
+    const queue = (cachedData.queues || []).find((q) => String(q.id) === String(queueId) || q.name === queueName);
+    if (queue) {
+        queue.pending = (queue.pending || 0) + 1;
+    }
+
+    cachedData.stats = {
+        ...(cachedData.stats || {}),
+        totalJobs: (cachedData.stats?.totalJobs || 0) + 1,
+        pendingJobs: (cachedData.stats?.pendingJobs || 0) + 1,
+    };
+
+    cachedData.activities = [
+        {
+            type: 'created',
+            icon: '+',
+            text: `<strong>${name}</strong> added to queue`,
+            time: 'just now',
+        },
+        ...(cachedData.activities || []),
+    ].slice(0, 20);
+
+    dataMeta.lastUpdated = Date.now();
+    dataMeta.lastError = null;
+    dataMeta.source = 'mock';
+    notifyDataListeners();
+
+    return job;
 }
 
 export { timeAgo, getSolscanTxLink, shortenAddress };
