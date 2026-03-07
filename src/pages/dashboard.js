@@ -314,13 +314,27 @@ function renderDataStatusStrip() {
 
   if (snapshot.mode === 'live') {
     const syncStatus = snapshot.meta.lastError
-      ? `<span class="data-status-error">Live sync warning: ${escapeHtml(snapshot.meta.lastError)}</span>`
+      ? `<span class="data-status-error">${escapeHtml(snapshot.meta.lastError)}</span>`
       : `On-chain mode active · Last sync ${formatSyncTime(snapshot.meta.lastUpdated)}`;
+
+    const errorHint = snapshot.meta.lastError
+      ? (() => {
+        const attempts = Number(snapshot.meta?.retryAttempts || 0);
+        if (snapshot.meta?.errorType === 'rate_limit') {
+          return `<span class="data-status-hint">Tip: reduce open tabs or use a dedicated RPC in Settings. Current cycle attempts: ${Math.max(1, attempts)}.</span>`;
+        }
+        if (snapshot.meta?.errorType === 'network') {
+          return `<span class="data-status-hint">Network is unstable. Keep this tab open, sync retries automatically.</span>`;
+        }
+        return `<span class="data-status-hint">Sync retries automatically every refresh cycle.</span>`;
+      })()
+      : '';
 
     return `
       <div class="data-status-strip live">
         <div class="data-status-title">● LIVE ON-CHAIN</div>
         <div class="data-status-text">${syncStatus}</div>
+        ${errorHint ? `<div class="data-status-text">${errorHint}</div>` : ''}
         <div class="data-status-actions">
           <button class="btn btn-ghost btn-sm" id="switch-to-demo-btn">Switch to Demo</button>
         </div>

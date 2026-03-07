@@ -513,6 +513,11 @@
     color: #ffc670;
 }
 
+.data-status-hint {
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+}
+
 /* ---- Stats Grid ---- */
 .stats-grid {
     display: grid;

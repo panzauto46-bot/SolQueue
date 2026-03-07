@@ -9,6 +9,7 @@
 import { getWalletState, getClient, onWalletChange } from './wallet-adapter.js';
 import { MOCK_STATS, MOCK_QUEUES, MOCK_JOBS, MOCK_WORKERS, MOCK_ACTIVITIES, MOCK_CHART_DATA } from './mock-data.js';
 import { timeAgo, getSolscanTxLink, shortenAddress } from '../sdk/index.js';
+import { PublicKey } from '@solana/web3.js';
 
 // ═══════════════════════════════════════════════
 //  DATA SERVICE STATE
@@ -28,7 +29,123 @@ let dataMeta = {
     lastUpdated: null,
     lastError: null,
     source: 'mock',
+    errorType: null,
+    retryAttempts: 0,
 };
+
+const MAX_QUEUE_SCAN = 5;
+const LIVE_RPC_RETRY_ATTEMPTS = 3;
+const LIVE_RPC_RETRY_BASE_DELAY_MS = 700;
+const LIVE_RPC_RETRY_MAX_DELAY_MS = 5000;
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractEmbeddedJson(text) {
+    if (typeof text !== 'string') return null;
+    const start = text.indexOf('{');
+    if (start < 0) return null;
+    try {
+        return JSON.parse(text.slice(start));
+    } catch {
+        return null;
+    }
+}
+
+function detectRpcErrorCode(error) {
+    const embedded = extractEmbeddedJson(error?.message || '');
+    if (typeof embedded?.error?.code === 'number') return embedded.error.code;
+    if (typeof error?.code === 'number') return error.code;
+    return null;
+}
+
+function classifyLiveError(error) {
+    const message = String(error?.message || '').toLowerCase();
+    const code = detectRpcErrorCode(error);
+
+    if (
+        code === 429
+        || message.includes('too many requests')
+        || message.includes('rate limit')
+        || message.includes('rate-limited')
+    ) {
+        return 'rate_limit';
+    }
+
+    if (
+        message.includes('failed to fetch')
+        || message.includes('networkerror')
+        || message.includes('timed out')
+        || message.includes('timeout')
+        || message.includes('connection')
+        || message.includes('econn')
+        || message.includes('enotfound')
+    ) {
+        return 'network';
+    }
+
+    if (message.includes('wallet') && (message.includes('disconnect') || message.includes('not connected'))) {
+        return 'wallet';
+    }
+
+    return 'unknown';
+}
+
+function toFriendlyLiveError(error, errorType, attempts = 1) {
+    const code = detectRpcErrorCode(error);
+
+    if (errorType === 'rate_limit') {
+        return `Devnet RPC is rate-limited (429). Auto-retrying with backoff (${attempts} attempt${attempts > 1 ? 's' : ''} this cycle).`;
+    }
+
+    if (errorType === 'network') {
+        return `Network/RPC connection is unstable. Auto-retrying with backoff (${attempts} attempt${attempts > 1 ? 's' : ''} this cycle).`;
+    }
+
+    if (errorType === 'wallet') {
+        return 'Wallet is disconnected from live mode. Reconnect wallet or switch to Demo.';
+    }
+
+    if (code !== null) {
+        return `RPC error ${code}. Live sync will retry automatically.`;
+    }
+
+    return 'Live sync failed. Retrying automatically.';
+}
+
+async function retryWithBackoff(task, opts = {}) {
+    const maxAttempts = opts.maxAttempts || LIVE_RPC_RETRY_ATTEMPTS;
+    const baseDelayMs = opts.baseDelayMs || LIVE_RPC_RETRY_BASE_DELAY_MS;
+    const maxDelayMs = opts.maxDelayMs || LIVE_RPC_RETRY_MAX_DELAY_MS;
+
+    let attempt = 0;
+    let lastError = null;
+
+    while (attempt < maxAttempts) {
+        attempt += 1;
+        try {
+            return await task();
+        } catch (error) {
+            lastError = error;
+            const kind = classifyLiveError(error);
+            const retryable = kind === 'rate_limit' || kind === 'network';
+
+            if (!retryable || attempt >= maxAttempts) {
+                break;
+            }
+
+            const expDelay = Math.min(maxDelayMs, baseDelayMs * (2 ** (attempt - 1)));
+            const jitterMs = Math.floor(Math.random() * 200);
+            await sleep(expDelay + jitterMs);
+        }
+    }
+
+    if (lastError && typeof lastError === 'object') {
+        lastError.__retryAttempts = attempt;
+    }
+    throw lastError;
+}
 
 function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -128,14 +245,18 @@ async function fetchLiveData() {
 
     try {
         // Fetch all queues
-        const queues = await client.fetchAllQueues();
+        const queues = await retryWithBackoff(
+            () => client.fetchAllQueues(),
+            { maxAttempts: LIVE_RPC_RETRY_ATTEMPTS }
+        );
 
         // Fetch jobs for each queue (limited to first 5 queues for performance)
         let allJobs = [];
-        for (const queue of queues.slice(0, 5)) {
+        for (const queue of queues.slice(0, MAX_QUEUE_SCAN)) {
             try {
-                const jobs = await client.fetchJobsByQueue(
-                    new (await import('@solana/web3.js')).PublicKey(queue.publicKey)
+                const jobs = await retryWithBackoff(
+                    () => client.fetchJobsByQueue(new PublicKey(queue.publicKey)),
+                    { maxAttempts: 2, baseDelayMs: 450, maxDelayMs: 1400 }
                 );
                 allJobs = allJobs.concat(jobs);
             } catch (e) {
@@ -145,10 +266,11 @@ async function fetchLiveData() {
 
         // Fetch workers for each queue
         let allWorkers = [];
-        for (const queue of queues.slice(0, 5)) {
+        for (const queue of queues.slice(0, MAX_QUEUE_SCAN)) {
             try {
-                const workers = await client.fetchWorkersByQueue(
-                    new (await import('@solana/web3.js')).PublicKey(queue.publicKey)
+                const workers = await retryWithBackoff(
+                    () => client.fetchWorkersByQueue(new PublicKey(queue.publicKey)),
+                    { maxAttempts: 2, baseDelayMs: 450, maxDelayMs: 1400 }
                 );
                 allWorkers = allWorkers.concat(workers);
             } catch (e) {
@@ -226,10 +348,16 @@ async function fetchLiveData() {
         dataMeta.lastUpdated = Date.now();
         dataMeta.lastError = null;
         dataMeta.source = 'live';
+        dataMeta.errorType = null;
+        dataMeta.retryAttempts = 0;
         notifyDataListeners();
     } catch (error) {
         console.error('Failed to fetch live data:', error);
-        dataMeta.lastError = error?.message || 'Failed to sync live data';
+        const retryAttempts = Number(error?.__retryAttempts || 1);
+        const errorType = classifyLiveError(error);
+        dataMeta.errorType = errorType;
+        dataMeta.retryAttempts = retryAttempts;
+        dataMeta.lastError = toFriendlyLiveError(error, errorType, retryAttempts);
         notifyDataListeners();
         // Keep showing last known data
     }
